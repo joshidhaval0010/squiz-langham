@@ -1,0 +1,1564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SQUIZ — Jewel Residences</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+/* ── RESET & TOKENS ────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#C9A84C;--gold-light:#F0D080;--gold-dark:#9A7B2F;
+  --black:#0A0A0A;--charcoal:#1A1A1A;--panel:#242424;
+  --border:#2E2E2E;--surface:#2A2A2A;
+  --text:#F0EDE8;--muted:#888;--subtle:#555;
+  --green:#4CAF50;--red:#F44336;--amber:#FFC107;--blue:#2196F3;
+  --radius:12px;--radius-sm:8px;
+  --transition:0.2s ease;
+  --sidebar-w:280px;
+  --topbar-h:60px;
+  --bnav-h:64px;
+}
+html,body{height:100%;overflow:hidden;background:var(--black);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:15px}
+
+/* ── LOADING OVERLAY ────────────────────────────────────────── */
+#loading-overlay{
+  position:fixed;inset:0;background:var(--black);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:9999;transition:opacity 0.4s ease;
+}
+#loading-overlay.hidden{opacity:0;pointer-events:none}
+.loading-logo{font-size:28px;font-weight:800;letter-spacing:4px;color:var(--gold);margin-bottom:24px}
+.loading-spinner{
+  width:36px;height:36px;border:3px solid var(--border);
+  border-top-color:var(--gold);border-radius:50%;
+  animation:spin 0.8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── MODAL ────────────────────────────────────────── */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.75);
+  display:flex;align-items:center;justify-content:center;
+  z-index:5000;padding:16px;
+  opacity:1;transition:opacity 0.2s ease;
+}
+.modal-overlay.hidden{opacity:0;pointer-events:none}
+.modal-box{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--radius);padding:28px 24px;
+  width:100%;max-width:400px;
+  transform:scale(1);transition:transform 0.2s ease;
+  max-height:90vh;overflow-y:auto;
+}
+.modal-overlay.hidden .modal-box{transform:scale(0.96)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.modal-title{font-size:18px;font-weight:700;color:var(--text)}
+.modal-close{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:4px;line-height:1}
+.modal-close:hover{color:var(--text)}
+.modal-label{display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;margin-top:14px}
+.modal-input{
+  width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:11px 14px;
+  color:var(--text);font-size:15px;outline:none;
+  transition:border-color var(--transition);
+}
+.modal-input:focus{border-color:var(--gold)}
+.modal-select{
+  width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:11px 14px;
+  color:var(--text);font-size:15px;outline:none;cursor:pointer;
+  -webkit-appearance:none;appearance:none;
+}
+.modal-select:focus{border-color:var(--gold)}
+.modal-select option{background:var(--panel)}
+.modal-error{color:var(--red);font-size:13px;margin-top:8px;min-height:18px}
+.modal-primary-btn{
+  width:100%;background:var(--gold);color:var(--black);
+  border:none;border-radius:var(--radius-sm);
+  padding:13px;font-size:15px;font-weight:700;
+  cursor:pointer;margin-top:20px;
+  transition:background var(--transition);
+}
+.modal-primary-btn:hover{background:var(--gold-light)}
+.modal-primary-btn:disabled{background:var(--subtle);cursor:not-allowed}
+.modal-divider{height:1px;background:var(--border);margin:18px 0}
+.modal-img-upload{
+  border:2px dashed var(--border);border-radius:var(--radius-sm);
+  padding:20px;text-align:center;cursor:pointer;
+  transition:border-color var(--transition);margin-top:6px;
+}
+.modal-img-upload:hover{border-color:var(--gold)}
+.modal-img-upload input[type=file]{display:none}
+.modal-img-preview{width:100%;max-height:120px;object-fit:cover;border-radius:var(--radius-sm);margin-top:8px;display:none}
+
+/* ── TOAST ────────────────────────────────────────── */
+#toast{
+  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+  background:var(--charcoal);border:1px solid var(--border);
+  color:var(--text);padding:10px 20px;border-radius:24px;
+  font-size:13px;font-weight:600;
+  z-index:8000;opacity:0;
+  transition:opacity 0.25s ease;
+  pointer-events:none;white-space:nowrap;
+  max-width:calc(100vw - 32px);
+  text-align:center;
+}
+#toast.show{opacity:1}
+#toast.toast-success{border-color:var(--green);color:var(--green)}
+#toast.toast-error{border-color:var(--red);color:var(--red)}
+
+/* ── LAYOUT ────────────────────────────────────────── */
+#app{display:flex;height:100vh;overflow:hidden}
+#sidebar-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:200;
+}
+#sidebar-overlay.active{display:block}
+
+/* ── SIDEBAR ────────────────────────────────────────── */
+#sidebar{
+  width:var(--sidebar-w);min-width:var(--sidebar-w);
+  background:var(--charcoal);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;height:100vh;overflow:hidden;
+  position:relative;z-index:210;transition:transform var(--transition);
+}
+.sidebar-logo{
+  padding:20px 20px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;flex-shrink:0;
+}
+.sidebar-logo-mark{
+  width:36px;height:36px;background:var(--gold);border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;font-weight:900;color:var(--black);
+}
+.sidebar-logo-text{font-size:16px;font-weight:700;color:var(--text)}
+.sidebar-logo-sub{font-size:11px;color:var(--muted);font-weight:400}
+.sidebar-search{padding:12px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sidebar-search-input{
+  width:100%;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;
+}
+.sidebar-search-input:focus{border-color:var(--gold)}
+.sidebar-nav{flex:1;overflow-y:auto;padding:12px 0}
+.nav-section-label{
+  font-size:10px;font-weight:700;color:var(--subtle);
+  text-transform:uppercase;letter-spacing:1px;
+  padding:8px 20px 4px;
+}
+.nav-item{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 20px;cursor:pointer;
+  color:var(--muted);font-size:14px;font-weight:500;
+  transition:background var(--transition),color var(--transition);
+}
+.nav-item:hover{background:var(--surface);color:var(--text)}
+.nav-item.active{background:rgba(201,168,76,0.12);color:var(--gold)}
+.nav-item-icon{font-size:16px;width:20px;text-align:center}
+.sidebar-stats{padding:16px;border-top:1px solid var(--border);flex-shrink:0}
+.stat-mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat-mini{background:var(--surface);border-radius:var(--radius-sm);padding:10px;text-align:center}
+.stat-mini-val{font-size:18px;font-weight:800;color:var(--gold)}
+.stat-mini-lbl{font-size:10px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:0.5px}
+.sidebar-user{
+  padding:14px 16px;border-top:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;flex-shrink:0;
+}
+.user-av{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--gold);color:var(--black);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;flex-shrink:0;
+}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ── MAIN ────────────────────────────────────────── */
+#main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;min-width:0}
+
+/* ── TOPBAR ────────────────────────────────────────── */
+#topbar{
+  height:var(--topbar-h);min-height:var(--topbar-h);
+  background:var(--charcoal);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 16px;gap:12px;flex-shrink:0;
+}
+#menu-btn{background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;padding:6px;line-height:1;display:none}
+.topbar-title{font-size:16px;font-weight:700;flex:1}
+.topbar-right{display:flex;align-items:center;gap:8px}
+#topbar-auth-btn{
+  background:var(--surface);border:1px solid var(--gold);
+  color:var(--gold);border-radius:8px;padding:7px 14px;
+  font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;
+  transition:background var(--transition);
+}
+#topbar-auth-btn:hover{background:rgba(201,168,76,0.15)}
+#topbar-auth-btn.logged-in{border-color:var(--green);color:var(--green)}
+
+/* ── CONTENT AREA ────────────────────────────────────────── */
+#content{flex:1;overflow-y:auto;padding:20px;padding-bottom:calc(var(--bnav-h) + 20px)}
+.view{display:none}
+.view.active{display:block}
+
+/* ── STAT CARDS ────────────────────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.stat-card-val{font-size:26px;font-weight:800}
+.stat-card-lbl{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
+.stat-compliant .stat-card-val{color:var(--green)}
+.stat-missing .stat-card-val{color:var(--red)}
+.stat-uninspected .stat-card-val{color:var(--muted)}
+
+/* ── FILTER BAR ────────────────────────────────────────── */
+.filter-bar{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.filter-select{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);border-radius:8px;padding:7px 10px;
+  font-size:13px;outline:none;cursor:pointer;
+  -webkit-appearance:none;appearance:none;
+}
+.filter-select:focus{border-color:var(--gold)}
+.filter-select option{background:var(--panel)}
+
+/* ── ROOM GRID ────────────────────────────────────────── */
+#room-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px}
+.room-card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:10px 6px;
+  text-align:center;cursor:pointer;
+  transition:all var(--transition);
+}
+.room-card:hover{border-color:var(--gold);transform:translateY(-2px)}
+.room-card.compliant{border-color:var(--green)}
+.room-card.missing{border-color:var(--red)}
+.room-card.uninspected{border-color:var(--border)}
+.room-num{font-size:15px;font-weight:800;color:var(--text)}
+.room-type{font-size:9px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:0.5px}
+.room-status-dot{width:7px;height:7px;border-radius:50%;margin:5px auto 0;background:var(--subtle)}
+.room-card.compliant .room-status-dot{background:var(--green)}
+.room-card.missing .room-status-dot{background:var(--red)}
+
+/* ── DETAIL VIEW ────────────────────────────────────────── */
+#view-detail{display:none;flex-direction:column}
+#view-detail.active{display:flex}
+#detail-content{flex:1;overflow-y:auto;padding:20px;padding-bottom:calc(var(--bnav-h) + 20px)}
+.detail-header{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.detail-back{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);border-radius:8px;padding:8px 16px;
+  cursor:pointer;font-size:14px;font-weight:600;
+  transition:border-color var(--transition);flex-shrink:0;
+}
+.detail-back:hover{border-color:var(--gold)}
+.detail-room-info{flex:1}
+.detail-room-title{font-size:20px;font-weight:800}
+.detail-room-sub{font-size:13px;color:var(--muted);margin-top:2px}
+.detail-status-badge{
+  padding:5px 12px;border-radius:20px;
+  font-size:12px;font-weight:700;text-transform:uppercase;
+  white-space:nowrap;
+}
+.detail-status-badge.compliant{background:rgba(76,175,80,0.15);color:var(--green);border:1px solid var(--green)}
+.detail-status-badge.missing{background:rgba(244,67,54,0.15);color:var(--red);border:1px solid var(--red)}
+.detail-status-badge.uninspected{background:rgba(136,136,136,0.1);color:var(--muted);border:1px solid var(--subtle)}
+.area-section{margin-bottom:20px}
+.area-title{font-size:13px;font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.item-row{
+  display:flex;align-items:center;gap:10px;
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:6px;
+}
+.item-icon{font-size:18px;width:26px;text-align:center;flex-shrink:0}
+.item-name{flex:1;font-size:14px}
+.item-expected{font-size:12px;color:var(--muted);white-space:nowrap}
+.item-controls{display:flex;align-items:center;gap:8px}
+.qty-btn{
+  width:34px;height:34px;border-radius:6px;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--transition);flex-shrink:0;
+}
+.qty-btn:hover{border-color:var(--gold);color:var(--gold)}
+.qty-val{font-size:16px;font-weight:800;min-width:28px;text-align:center}
+.qty-val.over{color:var(--green)}
+.qty-val.under{color:var(--red)}
+.qty-val.exact{color:var(--green)}
+.inspect-btn{
+  width:100%;background:var(--gold);color:var(--black);
+  border:none;border-radius:var(--radius-sm);
+  padding:14px;font-size:15px;font-weight:700;
+  cursor:pointer;margin-top:16px;
+  transition:background var(--transition);
+}
+.inspect-btn:hover{background:var(--gold-light)}
+.inspect-btn.already{background:var(--surface);color:var(--green);border:1px solid var(--green);cursor:default}
+.inspect-btn.already:hover{background:var(--surface)}
+
+/* ── COMPLIANCE ────────────────────────────────────────── */
+.comp-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.comp-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center}
+.comp-card-val{font-size:24px;font-weight:800}
+.comp-card-lbl{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase}
+.comp-table-wrap{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+th{background:var(--surface);padding:10px 14px;text-align:left;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap}
+td{padding:10px 14px;border-top:1px solid var(--border);font-size:13px}
+tr:hover td{background:rgba(255,255,255,0.02)}
+.badge{display:inline-block;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:700;text-transform:uppercase}
+.badge-green{background:rgba(76,175,80,0.15);color:var(--green)}
+.badge-red{background:rgba(244,67,54,0.15);color:var(--red)}
+.badge-muted{background:rgba(136,136,136,0.1);color:var(--muted)}
+.export-btn{
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--text);border-radius:8px;padding:8px 16px;
+  font-size:13px;cursor:pointer;transition:border-color var(--transition);
+}
+.export-btn:hover{border-color:var(--gold)}
+
+/* ── AI VIEW ────────────────────────────────────────── */
+.ai-insight-card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:12px}
+.ai-insight-icon{font-size:24px;margin-bottom:8px}
+.ai-insight-title{font-size:14px;font-weight:700;margin-bottom:6px}
+.ai-insight-text{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* ── CATALOGUE ────────────────────────────────────────── */
+.cat-section-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px}
+.cat-section-title:first-child{margin-top:0}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.cat-item{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;
+  position:relative;
+  transition:all var(--transition);
+}
+.cat-item:hover{border-color:var(--gold)}
+.cat-item-img{width:100%;height:80px;object-fit:cover;display:block}
+.cat-item-no-img{width:100%;height:80px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:32px}
+.cat-item-body{padding:8px 10px}
+.cat-item-name{font-size:13px;font-weight:600;line-height:1.3}
+.cat-item-cat{font-size:10px;color:var(--muted);margin-top:2px;text-transform:uppercase}
+.cat-delete-btn{
+  position:absolute;top:6px;right:6px;
+  width:26px;height:26px;border-radius:50%;
+  background:rgba(244,67,54,0.9);color:#fff;
+  border:none;font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  z-index:10;transition:background var(--transition);
+}
+.cat-delete-btn:hover{background:var(--red)}
+.cat-edit-btn{
+  position:absolute;top:6px;left:6px;
+  width:26px;height:26px;border-radius:50%;
+  background:rgba(201,168,76,0.85);color:var(--black);
+  border:none;font-size:13px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  z-index:10;transition:background var(--transition);
+}
+.cat-edit-btn:hover{background:var(--gold)}
+.cat-add-btn{
+  width:100%;background:rgba(201,168,76,0.1);
+  border:1px dashed var(--gold);color:var(--gold);
+  border-radius:var(--radius-sm);padding:13px;
+  font-size:14px;font-weight:600;cursor:pointer;
+  margin-bottom:16px;transition:background var(--transition);
+}
+.cat-add-btn:hover{background:rgba(201,168,76,0.2)}
+
+/* ── ACCOUNT VIEW ────────────────────────────────────────── */
+.account-card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:var(--radius);padding:28px 24px;
+  max-width:420px;margin:0 auto;
+}
+.account-title{font-size:20px;font-weight:800;margin-bottom:4px}
+.account-sub{font-size:13px;color:var(--muted);margin-bottom:24px}
+.account-avatar{
+  width:64px;height:64px;border-radius:50%;
+  background:var(--gold);color:var(--black);
+  display:flex;align-items:center;justify-content:center;
+  font-size:24px;font-weight:800;margin:0 auto 16px;
+}
+.account-profile-name{font-size:20px;font-weight:800;text-align:center;margin-bottom:4px}
+.account-profile-role{font-size:13px;color:var(--muted);text-align:center;margin-bottom:4px}
+.account-profile-email{font-size:12px;color:var(--subtle);text-align:center;margin-bottom:24px}
+.account-logout-btn{
+  width:100%;background:rgba(244,67,54,0.1);
+  border:1px solid var(--red);color:var(--red);
+  border-radius:var(--radius-sm);padding:13px;
+  font-size:14px;font-weight:600;cursor:pointer;
+  transition:background var(--transition);
+}
+.account-logout-btn:hover{background:rgba(244,67,54,0.2)}
+
+/* ── SECTION HEADING ────────────────────────────────────────── */
+.section-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-heading h2{font-size:20px;font-weight:800}
+
+/* ── EMPTY STATE ────────────────────────────────────────── */
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-state-icon{font-size:40px;margin-bottom:12px}
+.empty-state p{font-size:14px}
+
+/* ── BOTTOM NAV ────────────────────────────────────────── */
+#bottom-nav{
+  height:var(--bnav-h);min-height:var(--bnav-h);
+  background:var(--charcoal);border-top:1px solid var(--border);
+  display:none;align-items:stretch;
+  position:sticky;bottom:0;z-index:100;
+}
+.bnav-item{
+  flex:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  gap:3px;cursor:pointer;
+  color:var(--subtle);font-size:10px;font-weight:600;
+  text-transform:uppercase;letter-spacing:0.4px;
+  padding:6px 2px;
+  transition:color var(--transition);
+  border:none;background:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.bnav-item.active{color:var(--gold)}
+.bnav-item:hover{color:var(--muted)}
+.bnav-icon{font-size:20px;line-height:1}
+
+/* ── RESPONSIVE ────────────────────────────────────────── */
+@media(max-width:700px){
+  #sidebar{
+    position:fixed;left:0;top:0;height:100vh;
+    transform:translateX(-100%);z-index:210;
+  }
+  #sidebar.open{transform:translateX(0)}
+  #menu-btn{display:block}
+  #bottom-nav{display:flex}
+  #content{padding:12px;padding-bottom:calc(var(--bnav-h) + 12px)}
+  #detail-content{padding:12px;padding-bottom:calc(var(--bnav-h) + 12px)}
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .comp-cards{grid-template-columns:repeat(2,1fr)}
+  .cat-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+  #room-grid{grid-template-columns:repeat(auto-fill,minmax(65px,1fr));gap:6px}
+  .room-num{font-size:14px}
+  .detail-header{flex-direction:row;flex-wrap:wrap}
+}
+@media(max-width:380px){
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .cat-grid{grid-template-columns:repeat(2,1fr)}
+  .modal-box{padding:20px 16px}
+  #room-grid{grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:5px}
+}
+</style>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay">
+  <div class="loading-logo">SQUIZ</div>
+  <div class="loading-spinner"></div>
+</div>
+
+<!-- LOGIN MODAL -->
+<div id="login-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">🔑 Staff Login</span>
+      <button class="modal-close" onclick="hideLoginModal()">×</button>
+    </div>
+    <label class="modal-label">Email</label>
+    <input class="modal-input" id="login-email" type="email" placeholder="your@langhamhotels.com" autocomplete="email" autocapitalize="none" autocorrect="off">
+    <label class="modal-label">Password</label>
+    <input class="modal-input" id="login-pass" type="password" placeholder="Password" autocomplete="current-password">
+    <div class="modal-error" id="login-error"></div>
+    <button class="modal-primary-btn" id="login-btn" onclick="loginStaff()">Sign In</button>
+  </div>
+</div>
+
+<!-- ADD CATALOGUE ITEM MODAL -->
+<div id="add-item-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">➕ Add Furniture Item</span>
+      <button class="modal-close" onclick="hideAddItemModal()">×</button>
+    </div>
+    <label class="modal-label">Item Name</label>
+    <input class="modal-input" id="ai-name" type="text" placeholder="e.g. Bedside Lamp">
+    <label class="modal-label">Category</label>
+    <select class="modal-select" id="ai-cat">
+      <option value="Sleeping">Sleeping</option>
+      <option value="Tables">Tables</option>
+      <option value="Seating">Seating</option>
+      <option value="Lighting">Lighting</option>
+      <option value="Storage">Storage</option>
+      <option value="Bathroom">Bathroom</option>
+      <option value="Other">Other</option>
+    </select>
+    <label class="modal-label">Icon (emoji)</label>
+    <input class="modal-input" id="ai-icon" type="text" placeholder="e.g. 🛏️" maxlength="4" value="📦">
+    <label class="modal-label">Item Photo (optional — max 5 MB)</label>
+    <div class="modal-img-upload" id="img-upload-zone" onclick="document.getElementById('ai-img').click()">
+      <span id="img-upload-label">📷 Tap to upload photo</span>
+      <input type="file" id="ai-img" accept="image/*" onchange="previewImage(this)">
+      <img id="ai-img-preview" class="modal-img-preview" alt="preview">
+    </div>
+    <div class="modal-error" id="ai-error"></div>
+    <button class="modal-primary-btn" id="ai-save-btn" onclick="saveCatalogueItem()">Add Item</button>
+  </div>
+</div>
+
+<!-- EDIT ITEM MODAL -->
+<div id="edit-item-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">✏️ Edit Furniture Item</span>
+      <button class="modal-close" onclick="hideEditItemModal()">×</button>
+    </div>
+    <input type="hidden" id="ei-id">
+    <label class="modal-label">Item Name</label>
+    <input class="modal-input" id="ei-name" type="text" placeholder="e.g. King Bed">
+    <label class="modal-label">Category</label>
+    <select class="modal-select" id="ei-cat">
+      <option value="Sleeping">Sleeping</option>
+      <option value="Tables">Tables</option>
+      <option value="Seating">Seating</option>
+      <option value="Lighting">Lighting</option>
+      <option value="Storage">Storage</option>
+      <option value="Bathroom">Bathroom</option>
+      <option value="Other">Other</option>
+    </select>
+    <label class="modal-label">Icon (emoji)</label>
+    <input class="modal-input" id="ei-icon" type="text" placeholder="e.g. 🛏️" maxlength="4">
+    <label class="modal-label">Item Photo (optional — max 5 MB)</label>
+    <div class="modal-img-upload" id="ei-img-upload-zone" onclick="document.getElementById('ei-img').click()">
+      <span id="ei-img-upload-label">📷 Tap to upload / replace photo</span>
+      <input type="file" id="ei-img" accept="image/*" onchange="previewEditImage(this)">
+      <img id="ei-img-preview" class="modal-img-preview" alt="preview">
+    </div>
+    <div class="modal-error" id="ei-error"></div>
+    <button class="modal-primary-btn" id="ei-save-btn" onclick="saveEditCatalogueItem()">Save Changes</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- SIDEBAR OVERLAY -->
+  <div id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-mark">SQ</div>
+      <div>
+        <div class="sidebar-logo-text">SQUIZ</div>
+        <div class="sidebar-logo-sub">Jewel Residences</div>
+      </div>
+    </div>
+    <div class="sidebar-search">
+      <input class="sidebar-search-input" id="search-input" type="text" placeholder="🔍 Search rooms…" oninput="searchRooms(this.value)">
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-section-label">Navigation</div>
+      <div class="nav-item active" id="nav-rooms" onclick="showView('rooms')">
+        <span class="nav-item-icon">🏠</span>Rooms
+      </div>
+      <div class="nav-item" id="nav-compliance" onclick="showView('compliance')">
+        <span class="nav-item-icon">📋</span>Compliance
+      </div>
+      <div class="nav-item" id="nav-ai" onclick="showView('ai')">
+        <span class="nav-item-icon">🤖</span>AI Insights
+      </div>
+      <div class="nav-item" id="nav-catalogue" onclick="showView('catalogue')">
+        <span class="nav-item-icon">🪑</span>Catalogue
+      </div>
+      <div class="nav-item" id="nav-account" onclick="showView('account')">
+        <span class="nav-item-icon">👤</span>Account
+      </div>
+    </div>
+    <div class="sidebar-stats">
+      <div class="stat-mini-grid">
+        <div class="stat-mini"><div class="stat-mini-val" id="sm-compliant">0</div><div class="stat-mini-lbl">Compliant</div></div>
+        <div class="stat-mini"><div class="stat-mini-val" id="sm-missing">0</div><div class="stat-mini-lbl">Missing</div></div>
+        <div class="stat-mini"><div class="stat-mini-val" id="sm-inspected">0</div><div class="stat-mini-lbl">Inspected</div></div>
+        <div class="stat-mini"><div class="stat-mini-val" id="sm-rate">0%</div><div class="stat-mini-lbl">Rate</div></div>
+      </div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-av" id="user-av">?</div>
+      <div class="user-info">
+        <div class="user-name" id="user-name">Viewer Mode</div>
+        <div class="user-role" id="user-role">Read-only access</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div id="main">
+    <!-- TOPBAR -->
+    <div id="topbar">
+      <button id="menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-title" id="topbar-title">Rooms Overview</div>
+      <div class="topbar-right">
+        <button id="topbar-auth-btn" onclick="handleAuthBtn()">Sign In</button>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div id="content">
+
+      <!-- ROOMS VIEW -->
+      <div class="view active" id="view-rooms">
+        <div class="stats-grid">
+          <div class="stat-card stat-compliant"><div class="stat-card-val" id="s-compliant">0</div><div class="stat-card-lbl">✅ Compliant</div></div>
+          <div class="stat-card stat-missing"><div class="stat-card-val" id="s-missing">0</div><div class="stat-card-lbl">❌ Missing Items</div></div>
+          <div class="stat-card stat-uninspected"><div class="stat-card-val" id="s-uninspected">0</div><div class="stat-card-lbl">⏳ Uninspected</div></div>
+          <div class="stat-card"><div class="stat-card-val" id="s-total" style="color:var(--gold)">170</div><div class="stat-card-lbl">🏨 Total Rooms</div></div>
+        </div>
+        <div class="filter-bar">
+          <select class="filter-select" id="filter-type" onchange="filterType(this.value)">
+            <option value="">All Types</option>
+            <option value="1BR Hinterland">1BR Hinterland</option>
+            <option value="1BR Ocean">1BR Ocean</option>
+            <option value="2BR Ocean">2BR Ocean</option>
+            <option value="2BR Ocean Upper">2BR Ocean Upper</option>
+            <option value="3BR Skyline">3BR Skyline</option>
+            <option value="3BR Penthouse">3BR Penthouse</option>
+            <option value="4BR Penthouse">4BR Penthouse</option>
+          </select>
+          <select class="filter-select" id="filter-status" onchange="filterStatus(this.value)">
+            <option value="">All Status</option>
+            <option value="compliant">Compliant</option>
+            <option value="missing">Missing</option>
+            <option value="uninspected">Uninspected</option>
+          </select>
+          <select class="filter-select" id="filter-floor" onchange="filterFloor(this.value)">
+            <option value="">All Floors</option>
+          </select>
+        </div>
+        <div id="room-grid"></div>
+      </div>
+
+      <!-- COMPLIANCE VIEW -->
+      <div class="view" id="view-compliance">
+        <div class="section-heading">
+          <h2>Compliance Report</h2>
+          <button class="export-btn" onclick="exportCSV()">⬇ Export CSV</button>
+        </div>
+        <div class="comp-cards" id="comp-cards"></div>
+        <div class="comp-table-wrap">
+          <table><thead><tr>
+            <th>Room</th><th>Type</th><th>Floor</th><th>Status</th><th>Issues</th>
+          </tr></thead>
+          <tbody id="comp-body"></tbody></table>
+        </div>
+      </div>
+
+      <!-- AI VIEW -->
+      <div class="view" id="view-ai">
+        <div class="section-heading"><h2>AI Insights</h2></div>
+        <div id="ai-content"></div>
+      </div>
+
+      <!-- CATALOGUE VIEW -->
+      <div class="view" id="view-catalogue">
+        <div class="section-heading"><h2>Furniture Catalogue</h2></div>
+        <button class="cat-add-btn" id="cat-add-btn" onclick="showAddItemModal()" style="display:none">
+          ＋ Add New Furniture Item
+        </button>
+        <div id="catalogue-content"></div>
+      </div>
+
+      <!-- ACCOUNT VIEW -->
+      <div class="view" id="view-account">
+        <div id="account-content"></div>
+      </div>
+
+    </div><!-- /content -->
+
+    <!-- DETAIL VIEW (takes over main content area) -->
+    <div id="view-detail" style="display:none;flex-direction:column;flex:1;overflow:hidden">
+      <div id="detail-content" style="flex:1;overflow-y:auto;padding:20px;padding-bottom:calc(var(--bnav-h) + 20px)"></div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div id="bottom-nav">
+      <button class="bnav-item active" id="bnav-rooms" onclick="showView('rooms')">
+        <span class="bnav-icon">🏠</span>Rooms
+      </button>
+      <button class="bnav-item" id="bnav-compliance" onclick="showView('compliance')">
+        <span class="bnav-icon">📋</span>Comply
+      </button>
+      <button class="bnav-item" id="bnav-ai" onclick="showView('ai')">
+        <span class="bnav-icon">🤖</span>AI
+      </button>
+      <button class="bnav-item" id="bnav-catalogue" onclick="showView('catalogue')">
+        <span class="bnav-icon">🪑</span>Items
+      </button>
+      <button class="bnav-item" id="bnav-account" onclick="showView('account')">
+        <span class="bnav-icon">👤</span>Account
+      </button>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<script>
+/* ═══════════════════════════════════════════════════════
+   SUPABASE INIT
+═══════════════════════════════════════════════════════ */
+const SUPABASE_URL = 'https://jjkpfkwsminxzvgykjwy.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impqa3Bma3dzbWlueHp2Z3lrand5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4ODE4MzIsImV4cCI6MjA5MjQ1NzgzMn0.MFNlMv9uSKHgv0haJyV1l8ySFKnArnCjbBwyAlAEtJ0';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ═══════════════════════════════════════════════════════
+   APP STATE
+═══════════════════════════════════════════════════════ */
+let CURRENT_USER = null;
+let CATALOGUE = [];
+const INVENTORY = {};        // { roomId: { itemId: count } }
+const ROOM_STATUS = {};      // { roomId: 'compliant'|'missing'|'uninspected' }
+const INVENTORY_LOADED = new Set();
+let _activeView = 'rooms';
+let _activeFilters = { type: '', status: '', floor: '', search: '' };
+let _detailRoomId = null;
+
+/* ═══════════════════════════════════════════════════════
+   STATIC CATALOGUE FALLBACK
+═══════════════════════════════════════════════════════ */
+const CATALOGUE_STATIC = [
+  {id:'FRN-SLP-001',name:'King Bed',category:'Sleeping',icon:'🛏️',bg_color:'#1A1A2E',image_url:null,is_active:true,sort_order:0},
+  {id:'FRN-SLP-002',name:'Single / Twin Bed',category:'Sleeping',icon:'🛌',bg_color:'#1A2035',image_url:null,is_active:true,sort_order:1},
+  {id:'FRN-TBL-001',name:'Bedside Table',category:'Tables',icon:'🟫',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:2},
+  {id:'FRN-TBL-002',name:'Circular Dining Table',category:'Tables',icon:'⭕',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:3},
+  {id:'FRN-TBL-003',name:'Rectangular Dining Table',category:'Tables',icon:'▬',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:4},
+  {id:'FRN-TBL-004',name:'Lounge Coffee Table (Big)',category:'Tables',icon:'🪵',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:5},
+  {id:'FRN-TBL-005',name:'Lounge Coffee Table (Small)',category:'Tables',icon:'🟤',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:6},
+  {id:'FRN-TBL-006',name:'Outdoor Coffee Table',category:'Tables',icon:'☕',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:7},
+  {id:'FRN-TBL-007',name:'Study Table',category:'Tables',icon:'📐',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:8},
+  {id:'FRN-SEA-001',name:'Dining Chair',category:'Seating',icon:'🪑',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:9},
+  {id:'FRN-SEA-002',name:'Outdoor Chair',category:'Seating',icon:'🌿',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:10},
+  {id:'FRN-SEA-003',name:'Lounge Sofa (Rectangular)',category:'Seating',icon:'🛋️',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:11},
+  {id:'FRN-SEA-004',name:'Lounge Sofa (Square)',category:'Seating',icon:'🟦',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:12},
+  {id:'FRN-SEA-005',name:'Study Chair',category:'Seating',icon:'💺',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:13},
+  {id:'FRN-LIT-001',name:'Rectangular Lamp',category:'Lighting',icon:'🪔',bg_color:'#1E1810',image_url:null,is_active:true,sort_order:14},
+  {id:'FRN-LIT-002',name:'Cylindrical Lamp',category:'Lighting',icon:'🕯️',bg_color:'#1E1810',image_url:null,is_active:true,sort_order:15},
+  {id:'FRN-LIT-003',name:'Tall Standing Lamp',category:'Lighting',icon:'💡',bg_color:'#1E1810',image_url:null,is_active:true,sort_order:16},
+];
+
+/* ═══════════════════════════════════════════════════════
+   ROOM DEFINITIONS — Langham Jewel Residences Gold Coast
+   Floors 22–49 · 170 rooms
+═══════════════════════════════════════════════════════ */
+function genType(pos, range){
+  if(range==='22-35') return {1:'1BR Hinterland',2:'1BR Hinterland',3:'1BR Ocean',4:'1BR Ocean',5:'2BR Ocean',6:'2BR Ocean',7:'1BR Hinterland'}[pos];
+  if(range==='36-44') return {1:'1BR Hinterland',2:'1BR Hinterland',3:'2BR Ocean',4:'2BR Ocean',5:'2BR Ocean',6:'1BR Hinterland'}[pos];
+}
+const ROOMS = [];
+for(let f=22;f<=35;f++) for(let p=1;p<=7;p++) ROOMS.push({id:f*100+p,floor:f,type:genType(p,'22-35'),view:[3,4,5,6].includes(p)?'🌊 Ocean':'🌿 Hinterland'});
+for(let f=36;f<=44;f++) for(let p=1;p<=6;p++) ROOMS.push({id:f*100+p,floor:f,type:genType(p,'36-44'),view:[3,4,5].includes(p)?'🌊 Ocean':'🌿 Hinterland'});
+for(let f=45;f<=48;f++) for(let p=1;p<=4;p++) ROOMS.push({id:f*100+p,floor:f,type:p<=3?'2BR Ocean Upper':'3BR Skyline',view:p<=3?'🌊 Ocean':'🌅 Skyline'});
+ROOMS.push({id:4901,floor:49,type:'3BR Penthouse',view:'🌊 Ocean'});
+ROOMS.push({id:4902,floor:49,type:'4BR Penthouse',view:'🌊🌿 Ocean & Hinterland'});
+
+/* ═══════════════════════════════════════════════════════
+   STANDARDS — expected item counts per room type (FRN IDs)
+═══════════════════════════════════════════════════════ */
+const STANDARDS = {
+  '1BR Hinterland':{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2,'FRN-LIT-003':1,'FRN-TBL-002':1,'FRN-SEA-001':4,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-003':1},
+  '1BR Ocean':     {'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2,'FRN-LIT-003':1,'FRN-TBL-002':1,'FRN-SEA-001':4,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-003':1},
+  '2BR Ocean':     {'FRN-SLP-001':1,'FRN-SLP-002':2,'FRN-TBL-001':3,'FRN-LIT-001':2,'FRN-LIT-002':1,'FRN-LIT-003':1,'FRN-TBL-003':1,'FRN-SEA-001':8,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-003':1,'FRN-SEA-004':1},
+  '2BR Ocean Upper':{'FRN-SLP-001':2,'FRN-TBL-001':4,'FRN-LIT-001':2,'FRN-LIT-002':1,'FRN-LIT-003':1,'FRN-TBL-003':1,'FRN-SEA-001':8,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-003':1,'FRN-SEA-004':1},
+  '3BR Skyline':   {'FRN-SLP-001':2,'FRN-SLP-002':2,'FRN-TBL-001':5,'FRN-LIT-001':3,'FRN-LIT-002':2,'FRN-LIT-003':2,'FRN-TBL-003':1,'FRN-SEA-001':8,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':4,'FRN-TBL-006':2,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-003':1,'FRN-SEA-004':1},
+  '3BR Penthouse': {'FRN-SLP-001':2,'FRN-SLP-002':2,'FRN-TBL-001':5,'FRN-LIT-001':4,'FRN-LIT-002':2,'FRN-LIT-003':3,'FRN-TBL-003':1,'FRN-SEA-001':10,'FRN-TBL-004':2,'FRN-TBL-005':2,'FRN-SEA-002':6,'FRN-TBL-006':2,'FRN-TBL-007':2,'FRN-SEA-005':2,'FRN-SEA-003':2,'FRN-SEA-004':1},
+  '4BR Penthouse': {'FRN-SLP-001':3,'FRN-SLP-002':2,'FRN-TBL-001':7,'FRN-LIT-001':4,'FRN-LIT-002':4,'FRN-LIT-003':4,'FRN-TBL-003':1,'FRN-SEA-001':10,'FRN-TBL-004':2,'FRN-TBL-005':2,'FRN-SEA-002':8,'FRN-TBL-006':2,'FRN-TBL-007':2,'FRN-SEA-005':2,'FRN-SEA-003':2,'FRN-SEA-004':2},
+};
+
+/* ═══════════════════════════════════════════════════════
+   AREAS — room area groupings for detail view
+═══════════════════════════════════════════════════════ */
+const AREAS = {
+  '1BR Hinterland':{'🛏 Bedroom':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001','FRN-TBL-007','FRN-SEA-005'],'🛋 Lounge':['FRN-SEA-003','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003'],'🍽 Dining':['FRN-TBL-002','FRN-SEA-001'],'🌿 Outdoor':['FRN-SEA-002','FRN-TBL-006']},
+  '1BR Ocean':     {'🛏 Bedroom':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001','FRN-TBL-007','FRN-SEA-005'],'🛋 Lounge':['FRN-SEA-003','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003'],'🍽 Dining':['FRN-TBL-002','FRN-SEA-001'],'🌿 Outdoor Balcony':['FRN-SEA-002','FRN-TBL-006']},
+  '2BR Ocean':     {'🛏 Bedroom 1 (King)':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001','FRN-TBL-007','FRN-SEA-005'],'🛌 Bedroom 2 (Twin)':['FRN-SLP-002','FRN-TBL-001','FRN-LIT-002'],'🛋 Lounge':['FRN-SEA-003','FRN-SEA-004','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003'],'🍽 Dining':['FRN-TBL-003','FRN-SEA-001'],'🌿 Outdoor Balcony':['FRN-SEA-002','FRN-TBL-006']},
+  '2BR Ocean Upper':{'🛏 Bedroom 1 (King)':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001','FRN-TBL-007','FRN-SEA-005'],'🛏 Bedroom 2 (King)':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-002'],'🛋 Lounge':['FRN-SEA-003','FRN-SEA-004','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003'],'🍽 Dining':['FRN-TBL-003','FRN-SEA-001'],'🌿 Outdoor Balcony':['FRN-SEA-002','FRN-TBL-006']},
+  '3BR Skyline':   {'🛏 Bedroom 1 (King)':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001','FRN-TBL-007','FRN-SEA-005'],'🛏 Bedroom 2 (King)':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'],'🛌 Bedroom 3 (Twin)':['FRN-SLP-002','FRN-TBL-001','FRN-LIT-002'],'🛋 Lounge':['FRN-SEA-003','FRN-SEA-004','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003'],'🍽 Dining':['FRN-TBL-003','FRN-SEA-001'],'🌿 Outdoor':['FRN-SEA-002','FRN-TBL-006']},
+  '3BR Penthouse': {'🛏 Master Bedroom':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001','FRN-TBL-007','FRN-SEA-005'],'🛏 Bedroom 2 (King)':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'],'🛌 Bedroom 3 (Twin)':['FRN-SLP-002','FRN-TBL-001','FRN-LIT-002'],'🛋 Main Lounge':['FRN-SEA-003','FRN-SEA-004','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003'],'🍽 Formal Dining':['FRN-TBL-003','FRN-SEA-001'],'🌿 Outdoor Terrace':['FRN-SEA-002','FRN-TBL-006']},
+  '4BR Penthouse': {'🛏 Master Bedroom':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001','FRN-TBL-007','FRN-SEA-005'],'🛏 Bedroom 2':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'],'🛏 Bedroom 3':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-002'],'🛌 Bedroom 4 (Twin)':['FRN-SLP-002','FRN-TBL-001','FRN-LIT-002'],'🛋 Main Lounge':['FRN-SEA-003','FRN-SEA-004','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003'],'🍽 Formal Dining':['FRN-TBL-003','FRN-SEA-001'],'🌿 Terrace 1':['FRN-SEA-002','FRN-TBL-006'],'🌿 Terrace 2':['FRN-SEA-002','FRN-TBL-006']},
+};
+
+/* ═══════════════════════════════════════════════════════
+   DB: CATALOGUE
+═══════════════════════════════════════════════════════ */
+async function loadCatalogueFromDB(){
+  try{
+    const {data,error} = await sb.from('catalogue_items')
+      .select('*').eq('is_active',true).order('sort_order');
+    if(error) throw error;
+    CATALOGUE = (data && data.length>0) ? data : [...CATALOGUE_STATIC];
+  } catch(e){
+    console.warn('Catalogue DB load failed, using static',e.message);
+    CATALOGUE = [...CATALOGUE_STATIC];
+  }
+}
+
+async function addCatalogueItemToDB(name, category, icon, imageFile){
+  const slug = name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const id = slug+'-'+Date.now();
+  let image_url = null;
+
+  if(imageFile){
+    if(imageFile.size > 5*1024*1024) throw new Error('Image must be under 5 MB');
+    const ext = imageFile.name.split('.').pop().toLowerCase();
+    const path = `items/${id}.${ext}`;
+    const {error:upErr} = await sb.storage.from('furniture-images').upload(path, imageFile, {upsert:true});
+    if(upErr) console.warn('Image upload failed:',upErr.message);
+    else {
+      const {data:urlData} = sb.storage.from('furniture-images').getPublicUrl(path);
+      image_url = urlData.publicUrl;
+    }
+  }
+
+  const maxOrder = CATALOGUE.length>0 ? Math.max(...CATALOGUE.map(c=>c.sort_order||0))+1 : 0;
+  const item = {id,name,category,icon:icon||'📦',bg_color:'#1A1A1A',image_url,is_active:true,sort_order:maxOrder};
+  const {error} = await sb.from('catalogue_items').insert(item);
+  if(error) throw error;
+  CATALOGUE.push(item);
+  return item;
+}
+
+async function deleteCatalogueItemFromDB(id){
+  const {error} = await sb.from('catalogue_items').update({is_active:false}).eq('id',id);
+  if(error) throw error;
+  CATALOGUE = CATALOGUE.filter(c=>c.id!==id);
+}
+
+/* ═══════════════════════════════════════════════════════
+   DB: ROOM STATUS & INVENTORY
+═══════════════════════════════════════════════════════ */
+async function loadRoomStatuses(){
+  try{
+    const {data,error} = await sb.from('room_status').select('room_id,status');
+    if(error) throw error;
+    if(data) data.forEach(r=>{ ROOM_STATUS[r.room_id]=r.status; });
+  } catch(e){ console.warn('Room status load failed',e.message); }
+}
+
+async function loadRoomInventory(roomId){
+  if(INVENTORY_LOADED.has(roomId)) return;
+  try{
+    const {data,error} = await sb.from('room_inventory')
+      .select('item_id,actual_count').eq('room_id',roomId);
+    if(error) throw error;
+    if(!INVENTORY[roomId]) INVENTORY[roomId]={};
+    if(data) data.forEach(r=>{ INVENTORY[roomId][r.item_id]=r.actual_count; });
+    INVENTORY_LOADED.add(roomId);
+  } catch(e){
+    console.warn('Inventory load failed',e.message);
+    INVENTORY_LOADED.add(roomId);
+  }
+}
+
+async function saveInventoryItem(roomId, itemId, count){
+  if(!CURRENT_USER) return;
+  try{
+    await sb.from('room_inventory').upsert(
+      {room_id:roomId,item_id:itemId,actual_count:count,updated_at:new Date().toISOString(),updated_by:CURRENT_USER.id},
+      {onConflict:'room_id,item_id'}
+    );
+  } catch(e){ console.warn('Save inventory failed',e.message); }
+}
+
+async function saveRoomStatus(roomId, status){
+  if(!CURRENT_USER) return;
+  try{
+    await sb.from('room_status').upsert(
+      {room_id:roomId,status,updated_at:new Date().toISOString(),updated_by:CURRENT_USER.id},
+      {onConflict:'room_id'}
+    );
+  } catch(e){ console.warn('Save room status failed',e.message); }
+}
+
+/* ═══════════════════════════════════════════════════════
+   AUTH
+═══════════════════════════════════════════════════════ */
+async function initAuth(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(session) CURRENT_USER = session.user;
+  updateAuthUI();
+
+  sb.auth.onAuthStateChange((event, session)=>{
+    CURRENT_USER = session?.user||null;
+    updateAuthUI();
+    if(event==='SIGNED_IN'){
+      const name = CURRENT_USER?.user_metadata?.full_name||'';
+      showToast('Welcome'+(name?' '+name.split(' ')[0]:'')+'!','success');
+      if(_activeView==='account') renderAccountView();
+    }
+    if(event==='SIGNED_OUT'){
+      showToast('Signed out');
+      if(_activeView==='account') renderAccountView();
+    }
+  });
+}
+
+function updateAuthUI(){
+  const btn = document.getElementById('topbar-auth-btn');
+  const av = document.getElementById('user-av');
+  const nm = document.getElementById('user-name');
+  const rl = document.getElementById('user-role');
+  const catAdd = document.getElementById('cat-add-btn');
+
+  if(CURRENT_USER){
+    const fullName = CURRENT_USER.user_metadata?.full_name||CURRENT_USER.email;
+    const title = CURRENT_USER.user_metadata?.title||'Staff';
+    const initials = fullName.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    btn.textContent='Sign Out';
+    btn.className='logged-in';
+    av.textContent=initials;
+    nm.textContent=fullName;
+    rl.textContent=title;
+    catAdd.style.display='block';
+  } else {
+    btn.textContent='Sign In';
+    btn.className='';
+    av.textContent='?';
+    nm.textContent='Viewer Mode';
+    rl.textContent='Read-only access';
+    catAdd.style.display='none';
+  }
+
+  if(_activeView==='catalogue') renderCatalogue();
+  if(_activeView==='account') renderAccountView();
+  if(_detailRoomId) renderDetail(_detailRoomId);
+}
+
+function handleAuthBtn(){
+  if(CURRENT_USER) logoutStaff();
+  else showLoginModal();
+}
+
+async function loginStaff(){
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  const btn   = document.getElementById('login-btn');
+  errEl.textContent='';
+  if(!email||!pass){ errEl.textContent='Please enter email and password.'; return; }
+  btn.disabled=true; btn.textContent='Signing in…';
+  const {error} = await sb.auth.signInWithPassword({email,password:pass});
+  btn.disabled=false; btn.textContent='Sign In';
+  if(error){
+    errEl.textContent = error.message.includes('Invalid login')?'Incorrect email or password.':error.message;
+  } else {
+    hideLoginModal();
+    document.getElementById('login-email').value='';
+    document.getElementById('login-pass').value='';
+  }
+}
+
+async function logoutStaff(){
+  await sb.auth.signOut();
+}
+
+/* ═══════════════════════════════════════════════════════
+   MODALS
+═══════════════════════════════════════════════════════ */
+function showLoginModal(){
+  document.getElementById('login-modal').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('login-email').focus(),150);
+}
+function hideLoginModal(){
+  document.getElementById('login-modal').classList.add('hidden');
+  document.getElementById('login-error').textContent='';
+}
+function showAddItemModal(){
+  if(!CURRENT_USER){ showLoginModal(); return; }
+  document.getElementById('add-item-modal').classList.remove('hidden');
+  document.getElementById('ai-name').value='';
+  document.getElementById('ai-icon').value='📦';
+  document.getElementById('ai-error').textContent='';
+  document.getElementById('ai-img-preview').style.display='none';
+  document.getElementById('img-upload-label').style.display='block';
+  document.getElementById('ai-img').value='';
+  setTimeout(()=>document.getElementById('ai-name').focus(),150);
+}
+function hideAddItemModal(){
+  document.getElementById('add-item-modal').classList.add('hidden');
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    if(!document.getElementById('login-modal').classList.contains('hidden')) loginStaff();
+  }
+  if(e.key==='Escape'){
+    hideLoginModal();
+    hideAddItemModal();
+    hideEditItemModal();
+  }
+});
+
+function previewImage(input){
+  const file = input.files[0];
+  if(!file) return;
+  const preview = document.getElementById('ai-img-preview');
+  const label   = document.getElementById('img-upload-label');
+  const reader  = new FileReader();
+  reader.onload = e=>{ preview.src=e.target.result; preview.style.display='block'; label.style.display='none'; };
+  reader.readAsDataURL(file);
+}
+
+async function saveCatalogueItem(){
+  const name    = document.getElementById('ai-name').value.trim();
+  const category= document.getElementById('ai-cat').value;
+  const icon    = document.getElementById('ai-icon').value.trim()||'📦';
+  const imgFile = document.getElementById('ai-img').files[0]||null;
+  const errEl   = document.getElementById('ai-error');
+  const btn     = document.getElementById('ai-save-btn');
+  errEl.textContent='';
+  if(!name){ errEl.textContent='Please enter an item name.'; return; }
+  btn.disabled=true; btn.textContent='Saving…';
+  try{
+    await addCatalogueItemToDB(name,category,icon,imgFile);
+    hideAddItemModal();
+    renderCatalogue();
+    showToast('Added: '+name,'success');
+  } catch(e){
+    errEl.textContent='Error: '+e.message;
+  }
+  btn.disabled=false; btn.textContent='Add Item';
+}
+
+/* ═══════════════════════════════════════════════════════
+   CATALOGUE EDIT
+═══════════════════════════════════════════════════════ */
+function showEditItemModal(id){
+  if(!CURRENT_USER){ showLoginModal(); return; }
+  const item = CATALOGUE.find(c=>c.id===id);
+  if(!item) return;
+  document.getElementById('ei-id').value = id;
+  document.getElementById('ei-name').value = item.name||'';
+  document.getElementById('ei-icon').value = item.icon||'📦';
+  document.getElementById('ei-cat').value = item.category||'Other';
+  const preview = document.getElementById('ei-img-preview');
+  const label   = document.getElementById('ei-img-upload-label');
+  if(item.image_url){
+    preview.src=item.image_url; preview.style.display='block'; label.style.display='none';
+  } else {
+    preview.style.display='none'; label.style.display='block';
+  }
+  document.getElementById('ei-img').value='';
+  document.getElementById('ei-error').textContent='';
+  document.getElementById('edit-item-modal').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('ei-name').focus(),150);
+}
+function hideEditItemModal(){
+  document.getElementById('edit-item-modal').classList.add('hidden');
+}
+function previewEditImage(input){
+  const file=input.files[0]; if(!file) return;
+  const preview=document.getElementById('ei-img-preview');
+  const label=document.getElementById('ei-img-upload-label');
+  const reader=new FileReader();
+  reader.onload=e=>{ preview.src=e.target.result; preview.style.display='block'; label.style.display='none'; };
+  reader.readAsDataURL(file);
+}
+async function saveEditCatalogueItem(){
+  const id      = document.getElementById('ei-id').value;
+  const name    = document.getElementById('ei-name').value.trim();
+  const category= document.getElementById('ei-cat').value;
+  const icon    = document.getElementById('ei-icon').value.trim()||'📦';
+  const imgFile = document.getElementById('ei-img').files[0]||null;
+  const errEl   = document.getElementById('ei-error');
+  const btn     = document.getElementById('ei-save-btn');
+  errEl.textContent='';
+  if(!name){ errEl.textContent='Please enter an item name.'; return; }
+  btn.disabled=true; btn.textContent='Saving…';
+  try{
+    const item=CATALOGUE.find(c=>c.id===id);
+    let image_url=item?.image_url||null;
+    if(imgFile){
+      if(imgFile.size>5*1024*1024) throw new Error('Image must be under 5 MB');
+      const ext=imgFile.name.split('.').pop().toLowerCase();
+      const path=`items/${id}.${ext}`;
+      const {error:upErr}=await sb.storage.from('furniture-images').upload(path,imgFile,{upsert:true});
+      if(upErr) console.warn('Image upload failed:',upErr.message);
+      else{
+        const {data:urlData}=sb.storage.from('furniture-images').getPublicUrl(path);
+        image_url=urlData.publicUrl+'?t='+Date.now();
+      }
+    }
+    const updates={name,category,icon,image_url};
+    const {error}=await sb.from('catalogue_items').update(updates).eq('id',id);
+    if(error) throw error;
+    // Update local CATALOGUE
+    const idx=CATALOGUE.findIndex(c=>c.id===id);
+    if(idx>=0) Object.assign(CATALOGUE[idx],updates);
+    hideEditItemModal();
+    renderCatalogue();
+    showToast('Updated: '+name,'success');
+  } catch(e){
+    errEl.textContent='Error: '+e.message;
+  }
+  btn.disabled=false; btn.textContent='Save Changes';
+}
+
+/* ═══════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════ */
+let _toastTimer=null;
+function showToast(msg,type='',duration=2500){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  el.className='show'+(type?' toast-'+type:'');
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>{el.className='';},duration);
+}
+
+/* ═══════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════ */
+const VIEW_TITLES={rooms:'Rooms Overview',compliance:'Compliance Report',ai:'AI Insights',catalogue:'Furniture Catalogue',account:'Account'};
+
+function showView(name){
+  _activeView=name;
+  closeSidebar();
+  // Show/hide main content vs detail
+  document.getElementById('content').style.display='block';
+  document.getElementById('view-detail').style.display='none';
+  _detailRoomId=null;
+
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+name)?.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('nav-'+name)?.classList.add('active');
+  document.querySelectorAll('.bnav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('bnav-'+name)?.classList.add('active');
+  document.getElementById('topbar-title').textContent=VIEW_TITLES[name]||'';
+
+  if(name==='compliance') renderCompliance();
+  if(name==='ai') renderAI();
+  if(name==='catalogue') renderCatalogue();
+  if(name==='account') renderAccountView();
+}
+
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('active');
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('active');
+}
+
+/* ═══════════════════════════════════════════════════════
+   ROOM GRID
+═══════════════════════════════════════════════════════ */
+function getFilteredRooms(){
+  let rooms=[...ROOMS];
+  const {type,status,floor,search}=_activeFilters;
+  if(type)   rooms=rooms.filter(r=>r.type===type);
+  if(status) rooms=rooms.filter(r=>(ROOM_STATUS[r.id]||'uninspected')===status);
+  if(floor)  rooms=rooms.filter(r=>r.floor===+floor);
+  if(search){
+    const q=search.toLowerCase();
+    rooms=rooms.filter(r=>String(r.id).includes(q)||r.type.toLowerCase().includes(q));
+  }
+  return rooms;
+}
+
+function renderGrid(){
+  const el=document.getElementById('room-grid');
+  const rooms=getFilteredRooms();
+  if(!rooms.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">🔍</div><p>No rooms match filters</p></div>';
+    return;
+  }
+  el.innerHTML=rooms.map(r=>{
+    const s=ROOM_STATUS[r.id]||'uninspected';
+    return `<div class="room-card ${s}" onclick="openRoom(${r.id})">
+      <div class="room-num">${r.id}</div>
+      <div class="room-type">${r.type}</div>
+      <div class="room-status-dot"></div>
+    </div>`;
+  }).join('');
+}
+
+function filterType(v){_activeFilters.type=v;renderGrid();}
+function filterStatus(v){_activeFilters.status=v;renderGrid();}
+function filterFloor(v){_activeFilters.floor=v;renderGrid();}
+function searchRooms(v){_activeFilters.search=v;renderGrid();}
+
+function populateFloorFilter(){
+  const floors=[...new Set(ROOMS.map(r=>r.floor))].sort((a,b)=>a-b);
+  const sel=document.getElementById('filter-floor');
+  sel.innerHTML='<option value="">All Floors</option>'+floors.map(f=>`<option value="${f}">Floor ${f}</option>`).join('');
+}
+
+/* ═══════════════════════════════════════════════════════
+   ROOM DETAIL
+═══════════════════════════════════════════════════════ */
+async function openRoom(roomId){
+  _detailRoomId=roomId;
+  const detailView=document.getElementById('view-detail');
+  document.getElementById('content').style.display='none';
+  detailView.style.display='flex';
+  document.getElementById('detail-content').innerHTML='<div style="padding:20px;color:var(--muted);text-align:center">Loading…</div>';
+  document.getElementById('topbar-title').textContent='Room '+roomId;
+  await loadRoomInventory(roomId);
+  renderDetail(roomId);
+}
+
+function renderDetail(roomId){
+  const room=ROOMS.find(r=>r.id===roomId);
+  if(!room) return;
+  const status=ROOM_STATUS[roomId]||'uninspected';
+  const std=STANDARDS[room.type]||{};
+  const inv=INVENTORY[roomId]||{};
+  const canEdit=!!CURRENT_USER;
+
+  // Group by room area (using AREAS map if available, else fall back to category)
+  const areaMap = AREAS[room.type] || null;
+  let html=`<div class="detail-header">
+    <button class="detail-back" onclick="closeDetail()">← Back</button>
+    <div class="detail-room-info">
+      <div class="detail-room-title">Room ${roomId}</div>
+      <div class="detail-room-sub">Floor ${room.floor} · ${room.type}${room.view?' · '+room.view:''}</div>
+    </div>
+    <div class="detail-status-badge ${status}">${status}</div>
+  </div>`;
+
+  if(areaMap){
+    Object.entries(areaMap).forEach(([areaName,frnIds])=>{
+      html+=`<div class="area-section"><div class="area-title">${areaName}</div>`;
+      frnIds.forEach(frnId=>{
+        const expected=std[frnId]||0;
+        if(!expected) return; // skip if not in standard for this room type
+        const actual=inv[frnId]??0;
+        const catItem=CATALOGUE.find(c=>c.id===frnId)||{name:frnId,icon:'📦'};
+        const cls=actual===expected?'exact':actual<expected?'under':'over';
+        html+=`<div class="item-row">
+          <div class="item-icon">${catItem.icon||'📦'}</div>
+          <div class="item-name">${catItem.name}</div>
+          <div class="item-expected">Exp: ${expected}</div>
+          <div class="item-controls">
+            ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',-1)">−</button>`:''}
+            <div class="qty-val ${cls}">${actual}</div>
+            ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',1)">+</button>`:''}
+          </div>
+        </div>`;
+      });
+      html+='</div>';
+    });
+  } else {
+    // Fallback: group by catalogue category
+    const cats={};
+    Object.entries(std).forEach(([frnId,expected])=>{
+      const catItem=CATALOGUE.find(c=>c.id===frnId)||{name:frnId,icon:'📦',category:'General'};
+      const cat=catItem.category||'General';
+      if(!cats[cat]) cats[cat]=[];
+      cats[cat].push({frnId,catItem,expected,actual:inv[frnId]??0});
+    });
+    Object.entries(cats).forEach(([catName,items])=>{
+      html+=`<div class="area-section"><div class="area-title">${catName}</div>`;
+      items.forEach(({frnId,catItem,expected,actual})=>{
+        const cls=actual===expected?'exact':actual<expected?'under':'over';
+        html+=`<div class="item-row">
+          <div class="item-icon">${catItem.icon||'📦'}</div>
+          <div class="item-name">${catItem.name}</div>
+          <div class="item-expected">Exp: ${expected}</div>
+          <div class="item-controls">
+            ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',-1)">−</button>`:''}
+            <div class="qty-val ${cls}">${actual}</div>
+            ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',1)">+</button>`:''}
+          </div>
+        </div>`;
+      });
+      html+='</div>';
+    });
+  }
+
+  if(canEdit){
+    const inspected=status!=='uninspected';
+    html+=inspected
+      ?`<button class="inspect-btn already">✓ Inspected</button>`
+      :`<button class="inspect-btn" onclick="markInspected(${roomId})">Mark as Inspected</button>`;
+  } else {
+    html+=`<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Sign in to edit inventory</div>`;
+  }
+
+  document.getElementById('detail-content').innerHTML=html;
+}
+
+function closeDetail(){
+  document.getElementById('content').style.display='block';
+  document.getElementById('view-detail').style.display='none';
+  _detailRoomId=null;
+  // Restore nav
+  document.getElementById('topbar-title').textContent=VIEW_TITLES[_activeView]||'';
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('nav-'+_activeView)?.classList.add('active');
+  document.querySelectorAll('.bnav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('bnav-'+_activeView)?.classList.add('active');
+  renderGrid();
+}
+
+async function adjustItem(roomId,itemId,delta){
+  if(!CURRENT_USER){ showLoginModal(); return; }
+  if(!INVENTORY[roomId]) INVENTORY[roomId]={};
+  const cur=INVENTORY[roomId][itemId]||0;
+  const nv=Math.max(0,cur+delta);
+  INVENTORY[roomId][itemId]=nv;
+  recalcRoomStatus(roomId);
+  renderDetail(roomId);
+  updateStats();
+  // Save async
+  saveInventoryItem(roomId,itemId,nv);
+  saveRoomStatus(roomId,ROOM_STATUS[roomId]);
+}
+
+function recalcRoomStatus(roomId){
+  const room=ROOMS.find(r=>r.id===roomId);
+  const std=STANDARDS[room?.type]||{};
+  const inv=INVENTORY[roomId]||{};
+  const hasMissing=Object.entries(std).some(([frnId,exp])=>(inv[frnId]||0)<exp);
+  ROOM_STATUS[roomId]=hasMissing?'missing':'compliant';
+}
+
+async function markInspected(roomId){
+  if(!CURRENT_USER){ showLoginModal(); return; }
+  recalcRoomStatus(roomId);
+  await saveRoomStatus(roomId,ROOM_STATUS[roomId]);
+  renderDetail(roomId);
+  updateStats();
+  renderGrid();
+  showToast('Room '+roomId+' inspected','success');
+}
+
+/* ═══════════════════════════════════════════════════════
+   STATS
+═══════════════════════════════════════════════════════ */
+function calcStats(){
+  let compliant=0,missing=0,uninspected=0;
+  ROOMS.forEach(r=>{
+    const s=ROOM_STATUS[r.id]||'uninspected';
+    if(s==='compliant') compliant++;
+    else if(s==='missing') missing++;
+    else uninspected++;
+  });
+  const inspected=compliant+missing;
+  const rate=ROOMS.length>0?Math.round(inspected/ROOMS.length*100):0;
+  return {compliant,missing,uninspected,total:ROOMS.length,inspected,rate};
+}
+
+function updateStats(){
+  const {compliant,missing,uninspected,total,inspected,rate}=calcStats();
+  document.getElementById('s-compliant').textContent=compliant;
+  document.getElementById('s-missing').textContent=missing;
+  document.getElementById('s-uninspected').textContent=uninspected;
+  document.getElementById('s-total').textContent=total;
+  document.getElementById('sm-compliant').textContent=compliant;
+  document.getElementById('sm-missing').textContent=missing;
+  document.getElementById('sm-inspected').textContent=inspected;
+  document.getElementById('sm-rate').textContent=rate+'%';
+}
+
+/* ═══════════════════════════════════════════════════════
+   COMPLIANCE
+═══════════════════════════════════════════════════════ */
+function renderCompliance(){
+  const {compliant,missing,rate}=calcStats();
+  document.getElementById('comp-cards').innerHTML=`
+    <div class="comp-card"><div class="comp-card-val" style="color:var(--green)">${compliant}</div><div class="comp-card-lbl">✅ Compliant</div></div>
+    <div class="comp-card"><div class="comp-card-val" style="color:var(--red)">${missing}</div><div class="comp-card-lbl">❌ Missing</div></div>
+    <div class="comp-card"><div class="comp-card-val" style="color:var(--gold)">${rate}%</div><div class="comp-card-lbl">📊 Rate</div></div>`;
+
+  document.getElementById('comp-body').innerHTML=ROOMS.map(r=>{
+    const s=ROOM_STATUS[r.id]||'uninspected';
+    const inv=INVENTORY[r.id]||{};
+    const std=STANDARDS[r.type]||{};
+    const issues=Object.entries(std).filter(([frnId,exp])=>(inv[frnId]||0)<exp).length;
+    const badge=s==='compliant'?'badge-green':s==='missing'?'badge-red':'badge-muted';
+    return `<tr>
+      <td>${r.id}</td><td>${r.type}</td><td>F${r.floor}</td>
+      <td><span class="badge ${badge}">${s}</span></td>
+      <td>${s==='uninspected'?'—':issues>0?issues+' item'+(issues>1?'s':''):'None'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function exportCSV(){
+  const rows=[['Room','Type','Floor','Status'],...ROOMS.map(r=>[r.id,r.type,r.floor,ROOM_STATUS[r.id]||'uninspected'])];
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='squiz-compliance-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+/* ═══════════════════════════════════════════════════════
+   AI INSIGHTS
+═══════════════════════════════════════════════════════ */
+function renderAI(){
+  const {compliant,missing,uninspected,total,rate}=calcStats();
+  const missingRooms=ROOMS.filter(r=>(ROOM_STATUS[r.id]||'uninspected')==='missing');
+  const floorTally={};
+  missingRooms.forEach(r=>{ floorTally[r.floor]=(floorTally[r.floor]||0)+1; });
+  const worst=Object.entries(floorTally).sort((a,b)=>b[1]-a[1])[0];
+
+  const typeStats=ROOMS.reduce((acc,r)=>{
+    if(!acc[r.type]) acc[r.type]={total:0,compliant:0};
+    acc[r.type].total++;
+    if((ROOM_STATUS[r.id]||'uninspected')==='compliant') acc[r.type].compliant++;
+    return acc;
+  },{});
+
+  document.getElementById('ai-content').innerHTML=`
+    <div class="ai-insight-card">
+      <div class="ai-insight-icon">📊</div>
+      <div class="ai-insight-title">Overall Compliance</div>
+      <div class="ai-insight-text">
+        ${rate}% of rooms are compliant. ${compliant} rooms meet all standards, ${missing} have missing items, and ${uninspected} are yet to be inspected.
+        ${rate>=90?'Excellent progress!':rate>=70?'Good progress — focus on clearing missing rooms.':'Significant work needed to reach compliance targets.'}
+      </div>
+    </div>
+    ${worst?`<div class="ai-insight-card">
+      <div class="ai-insight-icon">⚠️</div>
+      <div class="ai-insight-title">Priority: Floor ${worst[0]}</div>
+      <div class="ai-insight-text">Floor ${worst[0]} has the most rooms with missing items (${worst[1]} rooms). Prioritise this floor in your next inspection round.</div>
+    </div>`:''}
+    <div class="ai-insight-card">
+      <div class="ai-insight-icon">🏨</div>
+      <div class="ai-insight-title">Room Type Breakdown</div>
+      <div class="ai-insight-text">${Object.entries(typeStats).map(([type,d])=>`${type}: ${d.compliant}/${d.total} compliant`).join(' · ')}</div>
+    </div>
+    <div class="ai-insight-card">
+      <div class="ai-insight-icon">💡</div>
+      <div class="ai-insight-title">Recommendation</div>
+      <div class="ai-insight-text">${uninspected>0?`${uninspected} rooms still need inspection. Assign staff to start from higher floors where luxury standards are most critical.`:`All rooms inspected. Review missing item rooms and restock from the catalogue.`}</div>
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CATALOGUE
+═══════════════════════════════════════════════════════ */
+function renderCatalogue(){
+  const el=document.getElementById('catalogue-content');
+  if(!CATALOGUE.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-state-icon">🪑</div><p>No items yet. Add some using the button above.</p></div>';
+    return;
+  }
+  const byCategory={};
+  CATALOGUE.forEach(c=>{ if(!byCategory[c.category]) byCategory[c.category]=[]; byCategory[c.category].push(c); });
+
+  let html='';
+  Object.entries(byCategory).forEach(([cat,items])=>{
+    html+=`<div class="cat-section-title">${cat}</div><div class="cat-grid">`;
+    items.forEach(item=>{
+      const imgHtml=item.image_url
+        ?`<img class="cat-item-img" src="${item.image_url}" alt="${escHtml(item.name)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        :'';
+      const noImgStyle=item.image_url?'display:none':'';
+      const deleteBtn=CURRENT_USER?`<button class="cat-delete-btn" onclick="confirmDeleteItem('${escAttr(item.id)}','${escAttr(item.name)}')" title="Remove item">×</button>`:'';
+      const editBtn=CURRENT_USER?`<button class="cat-edit-btn" onclick="showEditItemModal('${escAttr(item.id)}')" title="Edit item">✏️</button>`:'';
+      html+=`<div class="cat-item">${deleteBtn}${editBtn}
+        ${imgHtml}<div class="cat-item-no-img" style="${noImgStyle}">${item.icon||'📦'}</div>
+        <div class="cat-item-body">
+          <div class="cat-item-name">${escHtml(item.name)}</div>
+          <div class="cat-item-cat">${escHtml(item.category)}</div>
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  });
+  el.innerHTML=html;
+}
+
+function escHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escAttr(s){ return String(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
+
+async function confirmDeleteItem(id,name){
+  if(!CURRENT_USER) return;
+  if(!confirm('Remove "'+name+'" from catalogue?\n\nThis will hide it from the catalogue but won\'t delete existing room records.')) return;
+  try{
+    await deleteCatalogueItemFromDB(id);
+    renderCatalogue();
+    showToast('"'+name+'" removed','success');
+  } catch(e){
+    showToast('Error: '+e.message,'error');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   ACCOUNT VIEW
+═══════════════════════════════════════════════════════ */
+function renderAccountView(){
+  const el=document.getElementById('account-content');
+  if(CURRENT_USER){
+    const fullName=CURRENT_USER.user_metadata?.full_name||CURRENT_USER.email;
+    const title=CURRENT_USER.user_metadata?.title||'Staff';
+    const email=CURRENT_USER.email;
+    const initials=fullName.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    el.innerHTML=`<div class="account-card">
+      <div class="account-avatar">${initials}</div>
+      <div class="account-profile-name">${escHtml(fullName)}</div>
+      <div class="account-profile-role">${escHtml(title)}</div>
+      <div class="account-profile-email">${escHtml(email)}</div>
+      <div class="modal-divider"></div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;text-align:center;line-height:1.6">
+        You have full staff access — edit room inventory, manage the furniture catalogue, and mark inspections.
+      </div>
+      <button class="account-logout-btn" onclick="logoutStaff()">Sign Out</button>
+    </div>`;
+  } else {
+    el.innerHTML=`<div class="account-card">
+      <div class="account-title">Staff Login</div>
+      <div class="account-sub">Sign in to edit inventory and manage the catalogue. Visitors can browse without signing in.</div>
+      <label class="modal-label">Email</label>
+      <input class="modal-input" id="acc-email" type="email" placeholder="your@langhamhotels.com" autocomplete="email" autocapitalize="none" autocorrect="off">
+      <label class="modal-label">Password</label>
+      <input class="modal-input" id="acc-pass" type="password" placeholder="Password" autocomplete="current-password">
+      <div class="modal-error" id="acc-error"></div>
+      <button class="modal-primary-btn" id="acc-login-btn" onclick="loginFromAccount()">Sign In</button>
+    </div>`;
+  }
+}
+
+async function loginFromAccount(){
+  const email=document.getElementById('acc-email')?.value.trim();
+  const pass=document.getElementById('acc-pass')?.value;
+  const errEl=document.getElementById('acc-error');
+  const btn=document.getElementById('acc-login-btn');
+  if(!email||!pass){ errEl.textContent='Please enter email and password.'; return; }
+  btn.disabled=true; btn.textContent='Signing in…';
+  const {error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error){
+    btn.disabled=false; btn.textContent='Sign In';
+    errEl.textContent=error.message.includes('Invalid login')?'Incorrect email or password.':error.message;
+  }
+  // On success, onAuthStateChange fires → renderAccountView()
+}
+
+/* ═══════════════════════════════════════════════════════
+   INIT
+═══════════════════════════════════════════════════════ */
+async function initApp(){
+  try{
+    await Promise.all([loadRoomStatuses(), loadCatalogueFromDB()]);
+  } catch(e){
+    console.warn('Init error',e.message);
+  }
+  await initAuth();
+  populateFloorFilter();
+  updateStats();
+  renderGrid();
+
+  const overlay=document.getElementById('loading-overlay');
+  overlay.classList.add('hidden');
+  setTimeout(()=>{ overlay.style.display='none'; },500);
+}
+
+initApp();
+</script>
+</body>
+</html>

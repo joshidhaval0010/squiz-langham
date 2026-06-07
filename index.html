@@ -127,10 +127,17 @@ html,body{height:100%;overflow:hidden;background:var(--black);color:var(--text);
   padding:20px 20px 16px;border-bottom:1px solid var(--border);
   display:flex;align-items:center;gap:12px;flex-shrink:0;
 }
-.sidebar-logo-mark{
-  width:36px;height:36px;background:var(--gold);border-radius:8px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:16px;font-weight:900;color:var(--black);
+.sidebar-logo-mark{display:flex;align-items:center;gap:0;flex-shrink:0;}
+.sidebar-logo-sq{font-size:20px;font-weight:900;color:var(--gold);letter-spacing:-1px;}
+.sidebar-logo-q{
+  display:inline-block;position:relative;
+  border:2px solid var(--gold);border-radius:50%;
+  width:22px;height:22px;line-height:18px;text-align:center;
+  font-size:13px;font-weight:900;color:var(--gold);margin:0 1px;
+}
+.sidebar-logo-q::after{
+  content:'';position:absolute;bottom:-5px;right:-3px;
+  width:8px;height:2px;background:var(--gold);transform:rotate(45deg);border-radius:2px;
 }
 .sidebar-logo-text{font-size:16px;font-weight:700;color:var(--text)}
 .sidebar-logo-sub{font-size:11px;color:var(--muted);font-weight:400}
@@ -549,9 +556,10 @@ tr:hover td{background:rgba(255,255,255,0.02)}
   <!-- SIDEBAR -->
   <nav id="sidebar">
     <div class="sidebar-logo">
-      <img src="Logo.png" alt="SQUIZ" style="width:44px;height:44px;border-radius:8px;object-fit:contain;flex-shrink:0;">
+      <div class="sidebar-logo-mark">
+        <span class="sidebar-logo-sq">S</span><span class="sidebar-logo-q">Q</span><span class="sidebar-logo-sq">UIZ</span>
+      </div>
       <div>
-        <div class="sidebar-logo-text">SQUIZ</div>
         <div class="sidebar-logo-sub">Jewel Residences</div>
       </div>
     </div>

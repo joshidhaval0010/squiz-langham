@@ -299,6 +299,34 @@ html,body{height:100%;overflow:hidden;background:var(--black);color:var(--text);
   transition:background var(--transition);
 }
 .inspect-btn:hover{background:var(--gold-light)}
+.item-icon-img{
+  width:44px;height:44px;object-fit:cover;border-radius:8px;flex-shrink:0;
+  border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.05);
+}
+.sofa-selector{display:flex;flex-direction:column;gap:8px;padding:4px 0;}
+.sofa-selector-label{font-size:12px;color:var(--muted);margin-bottom:4px;}
+.sofa-option{
+  display:flex;align-items:center;gap:12px;padding:10px 14px;
+  border-radius:10px;cursor:pointer;
+  background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.08);
+  transition:all .2s;
+}
+.sofa-option:hover{background:rgba(255,255,255,.08);border-color:rgba(184,149,82,.35);}
+.sofa-option.selected{background:rgba(184,149,82,.12);border-color:var(--gold);}
+.sofa-option span{font-size:14px;color:var(--text);}
+.sofa-opt-img{width:40px;height:40px;object-fit:cover;border-radius:7px;flex-shrink:0;}
+.sofa-opt-icon{font-size:26px;width:40px;text-align:center;flex-shrink:0;}
+.sofa-check{margin-left:auto;color:var(--gold);font-size:16px;font-weight:700;}
+.notes-section{margin-top:8px;}
+.room-notes-input{
+  width:100%;min-height:90px;resize:vertical;
+  background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.1);
+  border-radius:10px;color:var(--text);font-size:14px;padding:12px;
+  font-family:inherit;line-height:1.5;box-sizing:border-box;
+  transition:border-color .2s;
+}
+.room-notes-input:focus{outline:none;border-color:var(--gold);}
+.room-notes-input::placeholder{color:var(--muted);}
 .inspect-btn.already{background:var(--surface);color:var(--green);border:1px solid var(--green);cursor:default}
 .inspect-btn.already:hover{background:var(--surface)}
 
@@ -456,6 +484,13 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 </style>
 </head>
 <body>
+<script>
+// Independent safety timer — hides overlay even if main script crashes
+setTimeout(function(){
+  var o=document.getElementById('loading-overlay');
+  if(o){o.classList.add('hidden');o.style.display='none';}
+},8000);
+</script>
 
 <!-- LOADING OVERLAY -->
 <div id="loading-overlay">
@@ -490,12 +525,10 @@ tr:hover td{background:rgba(255,255,255,0.02)}
     <input class="modal-input" id="ai-name" type="text" placeholder="e.g. Bedside Lamp">
     <label class="modal-label">Category</label>
     <select class="modal-select" id="ai-cat">
-      <option value="Sleeping">Sleeping</option>
-      <option value="Tables">Tables</option>
-      <option value="Seating">Seating</option>
-      <option value="Lighting">Lighting</option>
-      <option value="Storage">Storage</option>
-      <option value="Bathroom">Bathroom</option>
+      <option value="Bedroom">Bedroom</option>
+      <option value="Lounge">Lounge</option>
+      <option value="Dining">Dining</option>
+      <option value="Outdoor Balcony">Outdoor Balcony</option>
       <option value="Other">Other</option>
     </select>
     <label class="modal-label">Icon (emoji)</label>
@@ -523,12 +556,10 @@ tr:hover td{background:rgba(255,255,255,0.02)}
     <input class="modal-input" id="ei-name" type="text" placeholder="e.g. King Bed">
     <label class="modal-label">Category</label>
     <select class="modal-select" id="ei-cat">
-      <option value="Sleeping">Sleeping</option>
-      <option value="Tables">Tables</option>
-      <option value="Seating">Seating</option>
-      <option value="Lighting">Lighting</option>
-      <option value="Storage">Storage</option>
-      <option value="Bathroom">Bathroom</option>
+      <option value="Bedroom">Bedroom</option>
+      <option value="Lounge">Lounge</option>
+      <option value="Dining">Dining</option>
+      <option value="Outdoor Balcony">Outdoor Balcony</option>
       <option value="Other">Other</option>
     </select>
     <label class="modal-label">Icon (emoji)</label>
@@ -717,7 +748,26 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 ═══════════════════════════════════════════════════════ */
 const SUPABASE_URL = 'https://bwrvgpnvwgbivyvbmmmh.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ3cnZncG52d2diaXZ5dmJtbW1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4Mjk2MzIsImV4cCI6MjA5NjQwNTYzMn0.V2sPzzSi7p1vYQCiqmlOmCGxdnBGgNMOI5ViGVvWlbM';
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Safe Supabase init — falls back to offline mode if CDN didn't load
+let sb;
+try {
+  sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch(e) {
+  console.warn('Supabase not available, running in offline mode');
+  const noop = ()=>Promise.resolve({data:null,error:{message:'offline'}});
+  // Chainable query mock — supports .select().eq().order() etc, all awaitable
+  const makeQ = ()=>{
+    const q = {};
+    ['select','eq','neq','order','limit','filter','in','is','contains','match'].forEach(m=>{ q[m]=()=>q; });
+    q.insert = noop; q.upsert = noop;
+    q.update = ()=>q; q.delete = ()=>q;
+    q.then = (res,rej)=>Promise.resolve({data:[],error:null}).then(res,rej);
+    q.catch = fn=>Promise.resolve({data:[],error:null}).catch(fn);
+    return q;
+  };
+  const noopAuth = { getSession:()=>Promise.resolve({data:{session:null}}), onAuthStateChange:()=>({data:{subscription:{unsubscribe:()=>{}}}}), signInWithPassword:noop, signOut:noop };
+  sb = { from:()=>makeQ(), auth: noopAuth, storage:{ from:()=>({ upload:noop, getPublicUrl:()=>({data:{publicUrl:''}}) }) } };
+}
 
 /* ═══════════════════════════════════════════════════════
    APP STATE
@@ -735,23 +785,26 @@ let _detailRoomId = null;
    STATIC CATALOGUE FALLBACK
 ═══════════════════════════════════════════════════════ */
 const CATALOGUE_STATIC = [
-  {id:'FRN-SLP-001',name:'King Bed',category:'Sleeping',icon:'🛏️',bg_color:'#1A1A2E',image_url:null,is_active:true,sort_order:0},
-  {id:'FRN-SLP-002',name:'Single / Twin Bed',category:'Sleeping',icon:'🛌',bg_color:'#1A2035',image_url:null,is_active:true,sort_order:1},
-  {id:'FRN-TBL-001',name:'Bedside Table',category:'Tables',icon:'🟫',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:2},
-  {id:'FRN-TBL-002',name:'Circular Dining Table',category:'Tables',icon:'⭕',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:3},
-  {id:'FRN-TBL-003',name:'Rectangular Dining Table',category:'Tables',icon:'▬',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:4},
-  {id:'FRN-TBL-004',name:'Lounge Coffee Table (Big)',category:'Tables',icon:'🪵',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:5},
-  {id:'FRN-TBL-005',name:'Lounge Coffee Table (Small)',category:'Tables',icon:'🟤',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:6},
-  {id:'FRN-TBL-006',name:'Outdoor Coffee Table',category:'Tables',icon:'☕',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:7},
-  {id:'FRN-TBL-007',name:'Study Table',category:'Tables',icon:'📐',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:8},
-  {id:'FRN-SEA-001',name:'Dining Chair',category:'Seating',icon:'🪑',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:9},
-  {id:'FRN-SEA-002',name:'Outdoor Chair',category:'Seating',icon:'🌿',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:10},
-  {id:'FRN-SEA-003',name:'Lounge Sofa (Rectangular)',category:'Seating',icon:'🛋️',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:11},
-  {id:'FRN-SEA-004',name:'Lounge Sofa (Square)',category:'Seating',icon:'🟦',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:12},
-  {id:'FRN-SEA-005',name:'Study Chair',category:'Seating',icon:'💺',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:13},
-  {id:'FRN-LIT-001',name:'Rectangular Lamp',category:'Lighting',icon:'🪔',bg_color:'#1E1810',image_url:null,is_active:true,sort_order:14},
-  {id:'FRN-LIT-002',name:'Cylindrical Lamp',category:'Lighting',icon:'🕯️',bg_color:'#1E1810',image_url:null,is_active:true,sort_order:15},
-  {id:'FRN-LIT-003',name:'Tall Standing Lamp',category:'Lighting',icon:'💡',bg_color:'#1E1810',image_url:null,is_active:true,sort_order:16},
+  {id:'FRN-SLP-001',name:'King Bed',category:'Bedroom',icon:'🛏️',bg_color:'#1A1A2E',image_url:null,is_active:true,sort_order:0},
+  {id:'FRN-SLP-002',name:'Single / Twin Bed',category:'Bedroom',icon:'🛌',bg_color:'#1A2035',image_url:null,is_active:true,sort_order:1},
+  {id:'FRN-TBL-001',name:'Bedside Table',category:'Bedroom',icon:'🟫',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:2},
+  {id:'FRN-TBL-007',name:'Study Table',category:'Bedroom',icon:'📐',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:3},
+  {id:'FRN-SEA-005',name:'Study Chair',category:'Bedroom',icon:'💺',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:4},
+  {id:'FRN-LIT-001',name:'Rectangular Lamp',category:'Bedroom',icon:'🪔',bg_color:'#1E1810',image_url:null,is_active:true,sort_order:5},
+  {id:'FRN-LIT-002',name:'Cylindrical Lamp',category:'Bedroom',icon:'🕯️',bg_color:'#1E1810',image_url:null,is_active:true,sort_order:6},
+  {id:'FRN-SEA-003',name:'Lounge Sofa (Chaise)',category:'Lounge',icon:'🛋️',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:7},
+  {id:'FRN-SEA-004',name:'Lounge Sofa (Day bed)',category:'Lounge',icon:'🛋️',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:8},
+  {id:'FRN-SEA-006',name:'Lounge Sofa (Cane)',category:'Lounge',icon:'🛋️',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:9},
+  {id:'FRN-TBL-004',name:'Lounge Coffee Table (Big)',category:'Lounge',icon:'🪵',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:10},
+  {id:'FRN-TBL-005',name:'Lounge Coffee Table (Small)',category:'Lounge',icon:'🟤',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:11},
+  {id:'FRN-LIT-003',name:'Tall Standing Lamp',category:'Lounge',icon:'💡',bg_color:'#1E1810',image_url:null,is_active:true,sort_order:12},
+  {id:'FRN-TBL-002',name:'Circular Dining Table',category:'Dining',icon:'⭕',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:13},
+  {id:'FRN-TBL-003',name:'Rectangular Dining Table',category:'Dining',icon:'▬',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:14},
+  {id:'FRN-SEA-001',name:'Dining Chair',category:'Dining',icon:'🪑',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:15},
+  {id:'FRN-SEA-002',name:'Outdoor Chair',category:'Outdoor Balcony',icon:'🌿',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:16},
+  {id:'FRN-TBL-006',name:'Outdoor Coffee Table',category:'Outdoor Balcony',icon:'☕',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:17},
+  {id:'FRN-OUT-001',name:'Outdoor Daybed',category:'Outdoor Balcony',icon:'🛏️',bg_color:'#0A1A10',image_url:null,is_active:true,sort_order:18},
+  {id:'FRN-OUT-002',name:'Outdoor Footstool',category:'Outdoor Balcony',icon:'🟫',bg_color:'#0A1A10',image_url:null,is_active:true,sort_order:19},
 ];
 
 /* ═══════════════════════════════════════════════════════
@@ -773,26 +826,81 @@ ROOMS.push({id:4902,floor:49,type:'4BR Penthouse',view:'🌊🌿 Ocean & Hinterl
    STANDARDS — expected item counts per room type (FRN IDs)
 ═══════════════════════════════════════════════════════ */
 const STANDARDS = {
-  '1BR Hinterland':{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2,'FRN-LIT-003':1,'FRN-TBL-002':1,'FRN-SEA-001':4,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-003':1},
-  '1BR Ocean':     {'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2,'FRN-LIT-003':1,'FRN-TBL-002':1,'FRN-SEA-001':4,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-003':1},
-  '2BR Ocean':     {'FRN-SLP-001':1,'FRN-SLP-002':2,'FRN-TBL-001':3,'FRN-LIT-001':2,'FRN-LIT-002':1,'FRN-LIT-003':1,'FRN-TBL-003':1,'FRN-SEA-001':8,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-003':1,'FRN-SEA-004':1},
-  '2BR Ocean Upper':{'FRN-SLP-001':2,'FRN-TBL-001':4,'FRN-LIT-001':2,'FRN-LIT-002':1,'FRN-LIT-003':1,'FRN-TBL-003':1,'FRN-SEA-001':8,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-003':1,'FRN-SEA-004':1},
-  '3BR Skyline':   {'FRN-SLP-001':2,'FRN-SLP-002':2,'FRN-TBL-001':5,'FRN-LIT-001':3,'FRN-LIT-002':2,'FRN-LIT-003':2,'FRN-TBL-003':1,'FRN-SEA-001':8,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':4,'FRN-TBL-006':2,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-003':1,'FRN-SEA-004':1},
-  '3BR Penthouse': {'FRN-SLP-001':2,'FRN-SLP-002':2,'FRN-TBL-001':5,'FRN-LIT-001':4,'FRN-LIT-002':2,'FRN-LIT-003':3,'FRN-TBL-003':1,'FRN-SEA-001':10,'FRN-TBL-004':2,'FRN-TBL-005':2,'FRN-SEA-002':6,'FRN-TBL-006':2,'FRN-TBL-007':2,'FRN-SEA-005':2,'FRN-SEA-003':2,'FRN-SEA-004':1},
-  '4BR Penthouse': {'FRN-SLP-001':3,'FRN-SLP-002':2,'FRN-TBL-001':7,'FRN-LIT-001':4,'FRN-LIT-002':4,'FRN-LIT-003':4,'FRN-TBL-003':1,'FRN-SEA-001':10,'FRN-TBL-004':2,'FRN-TBL-005':2,'FRN-SEA-002':8,'FRN-TBL-006':2,'FRN-TBL-007':2,'FRN-SEA-005':2,'FRN-SEA-003':2,'FRN-SEA-004':2},
+  '1BR Hinterland':{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2,'FRN-LIT-003':1,'FRN-TBL-002':1,'FRN-SEA-001':4,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
+  '1BR Ocean':     {'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2,'FRN-LIT-003':1,'FRN-TBL-002':1,'FRN-SEA-001':4,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
+  '2BR Ocean':     {'FRN-SLP-001':1,'FRN-SLP-002':2,'FRN-TBL-001':3,'FRN-LIT-001':2,'FRN-LIT-002':1,'FRN-LIT-003':1,'FRN-TBL-003':1,'FRN-SEA-001':8,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
+  '2BR Ocean Upper':{'FRN-SLP-001':2,'FRN-TBL-001':4,'FRN-LIT-001':2,'FRN-LIT-002':1,'FRN-LIT-003':1,'FRN-TBL-003':1,'FRN-SEA-001':8,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
+  '3BR Skyline':   {'FRN-SLP-001':2,'FRN-SLP-002':2,'FRN-TBL-001':5,'FRN-LIT-001':3,'FRN-LIT-002':2,'FRN-LIT-003':2,'FRN-TBL-003':1,'FRN-SEA-001':8,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':4,'FRN-TBL-006':2,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
+  '3BR Penthouse': {'FRN-SLP-001':2,'FRN-SLP-002':2,'FRN-TBL-001':5,'FRN-LIT-001':4,'FRN-LIT-002':2,'FRN-LIT-003':3,'FRN-TBL-003':1,'FRN-SEA-001':10,'FRN-TBL-004':2,'FRN-TBL-005':2,'FRN-SEA-002':6,'FRN-TBL-006':2,'FRN-OUT-001':2,'FRN-OUT-002':2,'FRN-TBL-007':2,'FRN-SEA-005':2,'FRN-SEA-SOFA':1},
+  '4BR Penthouse': {'FRN-SLP-001':3,'FRN-SLP-002':2,'FRN-TBL-001':7,'FRN-LIT-001':4,'FRN-LIT-002':4,'FRN-LIT-003':4,'FRN-TBL-003':1,'FRN-SEA-001':10,'FRN-TBL-004':2,'FRN-TBL-005':2,'FRN-SEA-002':8,'FRN-TBL-006':2,'FRN-OUT-001':2,'FRN-OUT-002':2,'FRN-TBL-007':2,'FRN-SEA-005':2,'FRN-SEA-SOFA':1},
 };
+// Sofa item IDs (user selects which one is present — any 1 counts as compliant)
+const SOFA_IDS = ['FRN-SEA-003','FRN-SEA-004','FRN-SEA-006'];
+
+// Rooms ending in '01' on each floor have smaller dining setup (2 chairs only)
+const ROOM_AREA_OVERRIDES = {};
+ROOMS.forEach(r=>{
+  if(String(r.id).endsWith('01')){
+    ROOM_AREA_OVERRIDES[r.id] = {'FRN-SEA-001':2};
+  }
+});
 
 /* ═══════════════════════════════════════════════════════
    AREAS — room area groupings for detail view
 ═══════════════════════════════════════════════════════ */
 const AREAS = {
-  '1BR Hinterland':{'🛏 Bedroom':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001','FRN-TBL-007','FRN-SEA-005'],'🛋 Lounge':['FRN-SEA-003','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003'],'🍽 Dining':['FRN-TBL-002','FRN-SEA-001'],'🌿 Outdoor':['FRN-SEA-002','FRN-TBL-006']},
-  '1BR Ocean':     {'🛏 Bedroom':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001','FRN-TBL-007','FRN-SEA-005'],'🛋 Lounge':['FRN-SEA-003','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003'],'🍽 Dining':['FRN-TBL-002','FRN-SEA-001'],'🌿 Outdoor Balcony':['FRN-SEA-002','FRN-TBL-006']},
-  '2BR Ocean':     {'🛏 Bedroom 1 (King)':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001','FRN-TBL-007','FRN-SEA-005'],'🛌 Bedroom 2 (Twin)':['FRN-SLP-002','FRN-TBL-001','FRN-LIT-002'],'🛋 Lounge':['FRN-SEA-003','FRN-SEA-004','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003'],'🍽 Dining':['FRN-TBL-003','FRN-SEA-001'],'🌿 Outdoor Balcony':['FRN-SEA-002','FRN-TBL-006']},
-  '2BR Ocean Upper':{'🛏 Bedroom 1 (King)':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001','FRN-TBL-007','FRN-SEA-005'],'🛏 Bedroom 2 (King)':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-002'],'🛋 Lounge':['FRN-SEA-003','FRN-SEA-004','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003'],'🍽 Dining':['FRN-TBL-003','FRN-SEA-001'],'🌿 Outdoor Balcony':['FRN-SEA-002','FRN-TBL-006']},
-  '3BR Skyline':   {'🛏 Bedroom 1 (King)':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001','FRN-TBL-007','FRN-SEA-005'],'🛏 Bedroom 2 (King)':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'],'🛌 Bedroom 3 (Twin)':['FRN-SLP-002','FRN-TBL-001','FRN-LIT-002'],'🛋 Lounge':['FRN-SEA-003','FRN-SEA-004','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003'],'🍽 Dining':['FRN-TBL-003','FRN-SEA-001'],'🌿 Outdoor':['FRN-SEA-002','FRN-TBL-006']},
-  '3BR Penthouse': {'🛏 Master Bedroom':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001','FRN-TBL-007','FRN-SEA-005'],'🛏 Bedroom 2 (King)':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'],'🛌 Bedroom 3 (Twin)':['FRN-SLP-002','FRN-TBL-001','FRN-LIT-002'],'🛋 Main Lounge':['FRN-SEA-003','FRN-SEA-004','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003'],'🍽 Formal Dining':['FRN-TBL-003','FRN-SEA-001'],'🌿 Outdoor Terrace':['FRN-SEA-002','FRN-TBL-006']},
-  '4BR Penthouse': {'🛏 Master Bedroom':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001','FRN-TBL-007','FRN-SEA-005'],'🛏 Bedroom 2':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'],'🛏 Bedroom 3':['FRN-SLP-001','FRN-TBL-001','FRN-LIT-002'],'🛌 Bedroom 4 (Twin)':['FRN-SLP-002','FRN-TBL-001','FRN-LIT-002'],'🛋 Main Lounge':['FRN-SEA-003','FRN-SEA-004','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003'],'🍽 Formal Dining':['FRN-TBL-003','FRN-SEA-001'],'🌿 Terrace 1':['FRN-SEA-002','FRN-TBL-006'],'🌿 Terrace 2':['FRN-SEA-002','FRN-TBL-006']},
+  '1BR Hinterland':{
+    '🛏️ Bedroom':       {items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2}},
+    '🛋️ Lounge':        {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
+    '🍽️ Dining':        {items:['FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-002':1,'FRN-SEA-001':4}},
+    '🌴 Outdoor Balcony':{items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
+  },
+  '1BR Ocean':{
+    '🛏️ Bedroom':       {items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2}},
+    '🛋️ Lounge':        {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
+    '🍽️ Dining':        {items:['FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-002':1,'FRN-SEA-001':4}},
+    '🌴 Outdoor Balcony':{items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
+  },
+  '2BR Ocean':{
+    '🛏️ Bedroom 1 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2}},
+    '🛌 Bedroom 2 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-LIT-002'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-002':1}},
+    '🛋️ Lounge':          {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
+    '🍽️ Dining':          {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':12}},
+    '🌴 Outdoor Balcony':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
+  },
+  '2BR Ocean Upper':{
+    '🛏️ Bedroom 1 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2}},
+    '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-002'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-002':1}},
+    '🛋️ Lounge':          {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
+    '🍽️ Dining':          {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':12}},
+    '🌴 Outdoor Balcony':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
+  },
+  '3BR Skyline':{
+    '🛏️ Bedroom 1 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2}},
+    '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1}},
+    '🛌 Bedroom 3 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-LIT-002'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-002':1}},
+    '🛋️ Lounge':          {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
+    '🍽️ Dining':          {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':12}},
+    '🌴 Outdoor Balcony':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':4,'FRN-TBL-006':2,'FRN-OUT-001':1,'FRN-OUT-002':1}},
+  },
+  '3BR Penthouse':{
+    '🛏️ Master Bedroom':  {items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2}},
+    '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1}},
+    '🛌 Bedroom 3 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-LIT-002'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-002':1}},
+    '🛋️ Main Lounge':     {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
+    '🍽️ Formal Dining':   {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':12}},
+    '🌴 Outdoor Terrace':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':6,'FRN-TBL-006':2,'FRN-OUT-001':1,'FRN-OUT-002':1}},
+  },
+  '4BR Penthouse':{
+    '🛏️ Master Bedroom':  {items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2}},
+    '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1}},
+    '🛏️ Bedroom 3 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-002'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-002':1}},
+    '🛌 Bedroom 4 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-LIT-002'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-002':1}},
+    '🛋️ Main Lounge':     {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
+    '🍽️ Formal Dining':   {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':12}},
+    '🌴 Terrace 1':        {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':4,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
+    '🌴 Terrace 2':        {items:['FRN-SEA-002','FRN-TBL-006'], exp:{'FRN-SEA-002':4,'FRN-TBL-006':1}},
+  },
 };
 
 /* ═══════════════════════════════════════════════════════
@@ -1217,17 +1325,45 @@ async function openRoom(roomId){
   renderDetail(roomId);
 }
 
+function itemIconHtml(catItem){
+  if(catItem.image_url){
+    return `<img class="item-icon-img" src="${catItem.image_url}" alt="${catItem.name}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="item-icon" style="display:none">${catItem.icon||'📦'}</div>`;
+  }
+  return `<div class="item-icon">${catItem.icon||'📦'}</div>`;
+}
+
+function renderSofaSelector(roomId, canEdit){
+  const inv=INVENTORY[roomId]||{};
+  // Get all sofa options — match by SOFA_IDS or by name containing 'sofa'/'sofe' (category-agnostic)
+  const sofaItems = CATALOGUE.filter(c=>
+    SOFA_IDS.includes(c.id) ||
+    c.name.toLowerCase().includes('sofa') ||
+    c.name.toLowerCase().includes('sofe')
+  );
+  // Find currently selected sofa
+  const selectedId = sofaItems.find(s=>(inv[s.id]||0)>=1)?.id || null;
+  let html=`<div class="sofa-selector-label">Select sofa present in room:</div>`;
+  sofaItems.forEach(sofa=>{
+    const isSelected = sofa.id===selectedId;
+    const iconHtml = sofa.image_url
+      ? `<img class="sofa-opt-img" src="${sofa.image_url}" alt="${sofa.name}">`
+      : `<div class="sofa-opt-icon">${sofa.icon||'🛋️'}</div>`;
+    html+=`<div class="sofa-option ${isSelected?'selected':''}" ${canEdit?`onclick="selectSofa(${roomId},'${sofa.id}')"`:''}>${iconHtml}<span>${sofa.name}</span>${isSelected?'<span class="sofa-check">✓</span>':''}</div>`;
+  });
+  return `<div class="sofa-selector">${html}</div>`;
+}
+
 function renderDetail(roomId){
   const room=ROOMS.find(r=>r.id===roomId);
   if(!room) return;
   const status=ROOM_STATUS[roomId]||'uninspected';
-  const std=STANDARDS[room.type]||{};
   const inv=INVENTORY[roomId]||{};
   const canEdit=!!CURRENT_USER;
-
-  // Group by room area (using AREAS map if available, else fall back to category)
   const areaMap = AREAS[room.type] || null;
-  let html=`<div class="detail-header">
+  const notes = NOTES[roomId]||'';
+
+  let h=`<div class="detail-header">
     <button class="detail-back" onclick="closeDetail()">← Back</button>
     <div class="detail-room-info">
       <div class="detail-room-title">Room ${roomId}</div>
@@ -1236,66 +1372,103 @@ function renderDetail(roomId){
     <div class="detail-status-badge ${status}">${status}</div>
   </div>`;
 
+  // Track all item IDs shown in standard areas (to detect extras later)
+  const shownIds = new Set();
+
   if(areaMap){
-    Object.entries(areaMap).forEach(([areaName,frnIds])=>{
-      html+=`<div class="area-section"><div class="area-title">${areaName}</div>`;
-      frnIds.forEach(frnId=>{
-        const expected=std[frnId]||0;
-        if(!expected) return; // skip if not in standard for this room type
-        const actual=inv[frnId]??0;
-        const catItem=CATALOGUE.find(c=>c.id===frnId)||{name:frnId,icon:'📦'};
-        const cls=actual===expected?'exact':actual<expected?'under':'over';
-        html+=`<div class="item-row">
-          <div class="item-icon">${catItem.icon||'📦'}</div>
-          <div class="item-name">${catItem.name}</div>
-          <div class="item-expected">Exp: ${expected}</div>
-          <div class="item-controls">
-            ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',-1)">−</button>`:''}
-            <div class="qty-val ${cls}">${actual}</div>
-            ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',1)">+</button>`:''}
-          </div>
-        </div>`;
-      });
-      html+='</div>';
-    });
-  } else {
-    // Fallback: group by catalogue category
-    const cats={};
-    Object.entries(std).forEach(([frnId,expected])=>{
-      const catItem=CATALOGUE.find(c=>c.id===frnId)||{name:frnId,icon:'📦',category:'General'};
-      const cat=catItem.category||'General';
-      if(!cats[cat]) cats[cat]=[];
-      cats[cat].push({frnId,catItem,expected,actual:inv[frnId]??0});
-    });
-    Object.entries(cats).forEach(([catName,items])=>{
-      html+=`<div class="area-section"><div class="area-title">${catName}</div>`;
-      items.forEach(({frnId,catItem,expected,actual})=>{
-        const cls=actual===expected?'exact':actual<expected?'under':'over';
-        html+=`<div class="item-row">
-          <div class="item-icon">${catItem.icon||'📦'}</div>
-          <div class="item-name">${catItem.name}</div>
-          <div class="item-expected">Exp: ${expected}</div>
-          <div class="item-controls">
-            ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',-1)">−</button>`:''}
-            <div class="qty-val ${cls}">${actual}</div>
-            ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',1)">+</button>`:''}
-          </div>
-        </div>`;
-      });
-      html+='</div>';
+    Object.entries(areaMap).forEach(([areaName,areaData])=>{
+      const frnIds = areaData.items || [];
+      const areaExp = areaData.exp || {};
+      h+=`<div class="area-section"><div class="area-title">${areaName}</div>`;
+      // Check if this area has sofa placeholder
+      if(frnIds.includes('FRN-SEA-SOFA')){
+        h+=renderSofaSelector(roomId,canEdit);
+        shownIds.add('FRN-SEA-SOFA');
+        SOFA_IDS.forEach(id=>shownIds.add(id));
+        // Also mark any sofa-named items as shown
+        CATALOGUE.filter(c=>c.name.toLowerCase().includes('sofa')||c.name.toLowerCase().includes('sofe')).forEach(c=>shownIds.add(c.id));
+        // Render non-sofa items in this area
+        frnIds.filter(id=>id!=='FRN-SEA-SOFA').forEach(frnId=>{
+          shownIds.add(frnId);
+          const expected=(ROOM_AREA_OVERRIDES[roomId]?.[frnId]??areaExp[frnId])||0;
+          if(!expected) return;
+          const actual=inv[frnId]??0;
+          const catItem=CATALOGUE.find(c=>c.id===frnId)||{name:frnId,icon:'📦'};
+          const cls=actual===expected?'exact':actual<expected?'under':'over';
+          h+=`<div class="item-row">
+            ${itemIconHtml(catItem)}
+            <div class="item-name">${catItem.name}</div>
+            <div class="item-expected">Exp: ${expected}</div>
+            <div class="item-controls">
+              ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',-1)">−</button>`:''}
+              <div class="qty-val ${cls}">${actual}</div>
+              ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',1)">+</button>`:''}
+            </div>
+          </div>`;
+        });
+      } else {
+        frnIds.forEach(frnId=>{
+          shownIds.add(frnId);
+          const expected=(ROOM_AREA_OVERRIDES[roomId]?.[frnId]??areaExp[frnId])||0;
+          if(!expected) return;
+          const actual=inv[frnId]??0;
+          const catItem=CATALOGUE.find(c=>c.id===frnId)||{name:frnId,icon:'📦'};
+          const cls=actual===expected?'exact':actual<expected?'under':'over';
+          h+=`<div class="item-row">
+            ${itemIconHtml(catItem)}
+            <div class="item-name">${catItem.name}</div>
+            <div class="item-expected">Exp: ${expected}</div>
+            <div class="item-controls">
+              ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',-1)">−</button>`:''}
+              <div class="qty-val ${cls}">${actual}</div>
+              ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',1)">+</button>`:''}
+            </div>
+          </div>`;
+        });
+      }
+      h+='</div>';
     });
   }
+
+  // ── ADDITIONAL ITEMS ─────────────────────────────────────────
+  // Any catalogue item not already shown above — e.g. items added later via Catalogue tab
+  const extraItems = CATALOGUE.filter(c=>c.is_active!==false && !shownIds.has(c.id));
+  if(extraItems.length>0){
+    h+=`<div class="area-section"><div class="area-title">➕ Additional Items</div>`;
+    extraItems.forEach(catItem=>{
+      const actual=inv[catItem.id]??0;
+      const cls=actual>0?'over':'';
+      h+=`<div class="item-row">
+        ${itemIconHtml(catItem)}
+        <div class="item-name">${catItem.name}</div>
+        <div class="item-expected" style="color:var(--muted)">Custom</div>
+        <div class="item-controls">
+          ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${catItem.id}',-1)">−</button>`:''}
+          <div class="qty-val ${cls}">${actual}</div>
+          ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${catItem.id}',1)">+</button>`:''}
+        </div>
+      </div>`;
+    });
+    h+='</div>';
+  }
+
+  // Notes section
+  h+=`<div class="area-section notes-section">
+    <div class="area-title">📝 Notes</div>
+    <textarea class="room-notes-input" id="notes-${roomId}" placeholder="Add any notes about this room…" ${canEdit?'':'readonly'}
+      oninput="debounceSaveNote(${roomId},this.value)">${notes}</textarea>
+  </div>`;
 
   if(canEdit){
     const inspected=status!=='uninspected';
-    html+=inspected
+    h+=inspected
       ?`<button class="inspect-btn already">✓ Inspected</button>`
       :`<button class="inspect-btn" onclick="markInspected(${roomId})">Mark as Inspected</button>`;
   } else {
-    html+=`<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Sign in to edit inventory</div>`;
+    h+=`<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Sign in to edit inventory</div>`;
   }
 
-  document.getElementById('detail-content').innerHTML=html;
+  document.getElementById('detail-content').innerHTML=h;
 }
 
 function closeDetail(){
@@ -1325,11 +1498,55 @@ async function adjustItem(roomId,itemId,delta){
   saveRoomStatus(roomId,ROOM_STATUS[roomId]);
 }
 
+function selectSofa(roomId, sofaId){
+  if(!CURRENT_USER){ showLoginModal(); return; }
+  if(!INVENTORY[roomId]) INVENTORY[roomId]={};
+  // Deselect all sofas, select chosen one
+  const sofaItems = CATALOGUE.filter(c=>
+    SOFA_IDS.includes(c.id) ||
+    (c.category==='Lounge' && (c.name.toLowerCase().includes('sofa')||c.name.toLowerCase().includes('sofe')))
+  );
+  sofaItems.forEach(s=>{ INVENTORY[roomId][s.id]=0; saveInventoryItem(roomId,s.id,0); });
+  INVENTORY[roomId][sofaId]=1;
+  saveInventoryItem(roomId,sofaId,1);
+  recalcRoomStatus(roomId);
+  renderDetail(roomId);
+  updateStats();
+  saveRoomStatus(roomId,ROOM_STATUS[roomId]);
+}
+
+const NOTES={};
+let _noteTimer=null;
+function debounceSaveNote(roomId,val){
+  NOTES[roomId]=val;
+  clearTimeout(_noteTimer);
+  _noteTimer=setTimeout(()=>saveNote(roomId,val),800);
+}
+async function saveNote(roomId,val){
+  try{
+    await sb.from('room_status').upsert(
+      {room_id:roomId,notes:val,updated_at:new Date().toISOString()},
+      {onConflict:'room_id'}
+    );
+  } catch(e){ /* store locally only if DB fails */ }
+}
+async function loadRoomNotes(){
+  try{
+    const {data}=await sb.from('room_status').select('room_id,notes');
+    if(data) data.forEach(r=>{ if(r.notes) NOTES[r.room_id]=r.notes; });
+  } catch(e){}
+}
+
 function recalcRoomStatus(roomId){
   const room=ROOMS.find(r=>r.id===roomId);
   const std=STANDARDS[room?.type]||{};
   const inv=INVENTORY[roomId]||{};
-  const hasMissing=Object.entries(std).some(([frnId,exp])=>(inv[frnId]||0)<exp);
+  const sofaItems = CATALOGUE.filter(c=>SOFA_IDS.includes(c.id)||c.name.toLowerCase().includes('sofa')||c.name.toLowerCase().includes('sofe'));
+  const hasSofa = sofaItems.some(s=>(inv[s.id]||0)>=1);
+  const hasMissing=Object.entries(std).some(([frnId,exp])=>{
+    if(frnId==='FRN-SEA-SOFA') return !hasSofa;
+    return (inv[frnId]||0)<exp;
+  });
   ROOM_STATUS[roomId]=hasMissing?'missing':'compliant';
 }
 
@@ -1537,9 +1754,9 @@ async function loginFromAccount(){
   const pass=document.getElementById('acc-pass')?.value;
   const errEl=document.getElementById('acc-error');
   const btn=document.getElementById('acc-login-btn');
-  if(!email||!pass){ errEl.textContent='Please enter email and password.'; return; }
+  if(!email||!pass){ errEl.textContent='Please enter email and password'; return; }
   btn.disabled=true; btn.textContent='Signing in…';
-  const {error}=await sb.auth.signInWithPassword({email,password:pass});
+  const {error} = await sb.auth.signInWithPassword({email,password:pass});
   if(error){
     btn.disabled=false; btn.textContent='Sign In';
     errEl.textContent=error.message.includes('Invalid login')?'Incorrect email or password.':error.message;
@@ -1547,23 +1764,35 @@ async function loginFromAccount(){
   // On success, onAuthStateChange fires → renderAccountView()
 }
 
-/* ═══════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════
    INIT
-═══════════════════════════════════════════════════════ */
-async function initApp(){
-  try{
-    await Promise.all([loadRoomStatuses(), loadCatalogueFromDB()]);
-  } catch(e){
-    console.warn('Init error',e.message);
-  }
-  await initAuth();
-  populateFloorFilter();
-  updateStats();
-  renderGrid();
-
+═══════════════════════════════════════════════════════════ */
+function hideOverlay(){
   const overlay=document.getElementById('loading-overlay');
-  overlay.classList.add('hidden');
-  setTimeout(()=>{ overlay.style.display='none'; },500);
+  if(overlay){ overlay.classList.add('hidden'); setTimeout(()=>{ overlay.style.display='none'; },500); }
+}
+
+async function initApp(){
+  const safetyTimer = setTimeout(hideOverlay, 6000);
+  try{
+    await Promise.all([loadRoomStatuses(), loadCatalogueFromDB(), loadRoomNotes()]);
+  } catch(e){
+    console.warn('DB init error',e.message);
+  }
+  try{
+    await initAuth();
+  } catch(e){
+    console.warn('Auth init error',e.message);
+  }
+  try{
+    populateFloorFilter();
+    updateStats();
+    renderGrid();
+  } catch(e){
+    console.warn('Render error',e.message);
+  }
+  clearTimeout(safetyTimer);
+  hideOverlay();
 }
 
 initApp();

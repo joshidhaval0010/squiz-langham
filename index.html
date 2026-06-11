@@ -356,6 +356,20 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 .ai-insight-icon{font-size:24px;margin-bottom:8px}
 .ai-insight-title{font-size:14px;font-weight:700;margin-bottom:6px}
 .ai-insight-text{font-size:13px;color:var(--muted);line-height:1.6}
+.lamp-dist-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;gap:8px}
+.lamp-dist-row:last-child{border-bottom:none}
+.lamp-combo-label{color:var(--text);font-weight:500;flex:1}
+.lamp-combo-bar-wrap{flex:1;background:var(--surface);border-radius:4px;height:6px;overflow:hidden}
+.lamp-combo-bar{height:6px;border-radius:4px;background:var(--gold);transition:width .4s}
+.lamp-combo-count{color:var(--muted);min-width:32px;text-align:right}
+.lamp-combo-badge{display:inline-block;background:rgba(201,168,76,0.15);color:var(--gold);border-radius:4px;padding:1px 7px;font-size:11px;font-weight:600;white-space:nowrap}
+.lamp-swap-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
+.lamp-swap-row:last-child{border-bottom:none}
+.lamp-swap-room{color:var(--gold);font-weight:700;min-width:46px}
+.lamp-swap-detail{color:var(--muted);flex:1}
+.lamp-swap-arrow{color:var(--gold);font-weight:700;margin:0 4px}
+.lamp-section-type{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;padding:10px 0 4px;margin-top:2px}
+.lamp-no-deviation{color:var(--muted);font-size:12px;padding:8px 0}
 
 /* ── CATALOGUE ────────────────────────────────────────── */
 .cat-section-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:20px 0 10px}
@@ -788,10 +802,12 @@ const CATALOGUE_STATIC = [
   {id:'FRN-SLP-001',name:'King Bed',category:'Bedroom',icon:'🛏️',bg_color:'#1A1A2E',image_url:null,is_active:true,sort_order:0},
   {id:'FRN-SLP-002',name:'Single / Twin Bed',category:'Bedroom',icon:'🛌',bg_color:'#1A2035',image_url:null,is_active:true,sort_order:1},
   {id:'FRN-TBL-001',name:'Bedside Table',category:'Bedroom',icon:'🟫',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:2},
+  {id:'FRN-TBL-008',name:'Bedside Table (Small)',category:'Bedroom',icon:'🟫',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:3},
   {id:'FRN-TBL-007',name:'Study Table',category:'Bedroom',icon:'📐',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:3},
   {id:'FRN-SEA-005',name:'Study Chair',category:'Bedroom',icon:'💺',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:4},
   {id:'FRN-LIT-001',name:'Rectangular Lamp',category:'Bedroom',icon:'🪔',bg_color:'#1E1810',image_url:null,is_active:true,sort_order:5},
-  {id:'FRN-LIT-002',name:'Cylindrical Lamp',category:'Bedroom',icon:'🕯️',bg_color:'#1E1810',image_url:null,is_active:true,sort_order:6},
+  {id:'FRN-LIT-002',name:'Cylindrical Lamp (Sml)',category:'Bedroom',icon:'🕯️',bg_color:'#1E1810',image_url:null,is_active:true,sort_order:6},
+  {id:'FRN-LIT-004',name:'Cylindrical Lamp (Big)',category:'Bedroom',icon:'🕯️',bg_color:'#1E1810',image_url:null,is_active:true,sort_order:7},
   {id:'FRN-SEA-003',name:'Lounge Sofa (Chaise)',category:'Lounge',icon:'🛋️',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:7},
   {id:'FRN-SEA-004',name:'Lounge Sofa (Day bed)',category:'Lounge',icon:'🛋️',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:8},
   {id:'FRN-SEA-006',name:'Lounge Sofa (Cane)',category:'Lounge',icon:'🛋️',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:9},
@@ -826,16 +842,27 @@ ROOMS.push({id:4902,floor:49,type:'4BR Penthouse',view:'🌊🌿 Ocean & Hinterl
    STANDARDS — expected item counts per room type (FRN IDs)
 ═══════════════════════════════════════════════════════ */
 const STANDARDS = {
-  '1BR Hinterland':{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2,'FRN-LIT-003':1,'FRN-TBL-002':1,'FRN-SEA-001':4,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
+  '1BR Hinterland':{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2,'FRN-LIT-003':1,'FRN-TBL-002':1,'FRN-SEA-001':4,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
   '1BR Ocean':     {'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2,'FRN-LIT-003':1,'FRN-TBL-002':1,'FRN-SEA-001':4,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
-  '2BR Ocean':     {'FRN-SLP-001':1,'FRN-SLP-002':2,'FRN-TBL-001':3,'FRN-LIT-001':2,'FRN-LIT-002':1,'FRN-LIT-003':1,'FRN-TBL-003':1,'FRN-SEA-001':8,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
-  '2BR Ocean Upper':{'FRN-SLP-001':2,'FRN-TBL-001':4,'FRN-LIT-001':2,'FRN-LIT-002':1,'FRN-LIT-003':1,'FRN-TBL-003':1,'FRN-SEA-001':8,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
-  '3BR Skyline':   {'FRN-SLP-001':2,'FRN-SLP-002':2,'FRN-TBL-001':5,'FRN-LIT-001':3,'FRN-LIT-002':2,'FRN-LIT-003':2,'FRN-TBL-003':1,'FRN-SEA-001':8,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':4,'FRN-TBL-006':2,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
-  '3BR Penthouse': {'FRN-SLP-001':2,'FRN-SLP-002':2,'FRN-TBL-001':5,'FRN-LIT-001':4,'FRN-LIT-002':2,'FRN-LIT-003':3,'FRN-TBL-003':1,'FRN-SEA-001':10,'FRN-TBL-004':2,'FRN-TBL-005':2,'FRN-SEA-002':6,'FRN-TBL-006':2,'FRN-OUT-001':2,'FRN-OUT-002':2,'FRN-TBL-007':2,'FRN-SEA-005':2,'FRN-SEA-SOFA':1},
-  '4BR Penthouse': {'FRN-SLP-001':3,'FRN-SLP-002':2,'FRN-TBL-001':7,'FRN-LIT-001':4,'FRN-LIT-002':4,'FRN-LIT-003':4,'FRN-TBL-003':1,'FRN-SEA-001':10,'FRN-TBL-004':2,'FRN-TBL-005':2,'FRN-SEA-002':8,'FRN-TBL-006':2,'FRN-OUT-001':2,'FRN-OUT-002':2,'FRN-TBL-007':2,'FRN-SEA-005':2,'FRN-SEA-SOFA':1},
+  '2BR Ocean':     {'FRN-SLP-001':1,'FRN-SLP-002':2,'FRN-TBL-001':3,'FRN-LIT-001':2,'FRN-LIT-002':1,'FRN-LIT-003':1,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
+  '2BR Ocean Upper':{'FRN-SLP-001':2,'FRN-TBL-001':4,'FRN-LIT-001':2,'FRN-LIT-002':1,'FRN-LIT-003':1,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
+  '3BR Skyline':   {'FRN-SLP-001':2,'FRN-SLP-002':2,'FRN-TBL-001':5,'FRN-LIT-001':3,'FRN-LIT-002':2,'FRN-LIT-003':2,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':4,'FRN-TBL-006':2,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
+  '3BR Penthouse': {'FRN-SLP-001':2,'FRN-SLP-002':2,'FRN-TBL-001':5,'FRN-LIT-001':4,'FRN-LIT-002':2,'FRN-LIT-003':3,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':2,'FRN-TBL-005':2,'FRN-SEA-002':6,'FRN-TBL-006':2,'FRN-OUT-001':2,'FRN-OUT-002':2,'FRN-TBL-007':2,'FRN-SEA-005':2,'FRN-SEA-SOFA':1},
+  '4BR Penthouse': {'FRN-SLP-001':3,'FRN-SLP-002':2,'FRN-TBL-001':7,'FRN-LIT-001':4,'FRN-LIT-002':4,'FRN-LIT-003':4,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':2,'FRN-TBL-005':2,'FRN-SEA-002':8,'FRN-TBL-006':2,'FRN-OUT-001':2,'FRN-OUT-002':2,'FRN-TBL-007':2,'FRN-SEA-005':2,'FRN-SEA-SOFA':1},
 };
 // Sofa item IDs (user selects which one is present — any 1 counts as compliant)
 const SOFA_IDS = ['FRN-SEA-003','FRN-SEA-004','FRN-SEA-006'];
+// Lamp item IDs — any combination totalling LAMP_TOTALS[roomType] = compliant
+const LAMP_IDS = ['FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'];
+const LAMP_TOTALS = {
+  '1BR Hinterland':2,  // 1K
+  '1BR Ocean':     2,  // 1K
+  '2BR Ocean':     3,  // 1K + 1T
+  '2BR Ocean Upper':4, // 2K
+  '3BR Skyline':   5,  // 2K + 1T
+  '3BR Penthouse': 5,  // 2K + 1T
+  '4BR Penthouse': 7,  // 3K + 1T
+};
 
 // Rooms ending in '01' on each floor have smaller dining setup (2 chairs only)
 const ROOM_AREA_OVERRIDES = {};
@@ -850,56 +877,56 @@ ROOMS.forEach(r=>{
 ═══════════════════════════════════════════════════════ */
 const AREAS = {
   '1BR Hinterland':{
-    '🛏️ Bedroom':       {items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2}},
+    '🛏️ Bedroom':       {items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
     '🛋️ Lounge':        {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
     '🍽️ Dining':        {items:['FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-002':1,'FRN-SEA-001':4}},
-    '🌴 Outdoor Balcony':{items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
+    '🌴 Outdoor Balcony':{items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
   },
   '1BR Ocean':{
-    '🛏️ Bedroom':       {items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2}},
+    '🛏️ Bedroom':       {items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
     '🛋️ Lounge':        {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
     '🍽️ Dining':        {items:['FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-002':1,'FRN-SEA-001':4}},
-    '🌴 Outdoor Balcony':{items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
+    '🌴 Outdoor Balcony':{items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
   },
   '2BR Ocean':{
-    '🛏️ Bedroom 1 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2}},
-    '🛌 Bedroom 2 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-LIT-002'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-002':1}},
+    '🛏️ Bedroom 1 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
+    '🛌 Bedroom 2 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-001':1}},
     '🛋️ Lounge':          {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
-    '🍽️ Dining':          {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':12}},
-    '🌴 Outdoor Balcony':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
+    '🍽️ Dining':          {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':6}},
+    '🌴 Outdoor Balcony':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
   },
   '2BR Ocean Upper':{
-    '🛏️ Bedroom 1 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2}},
-    '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-002'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-002':1}},
+    '🛏️ Bedroom 1 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
+    '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
     '🛋️ Lounge':          {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
-    '🍽️ Dining':          {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':12}},
-    '🌴 Outdoor Balcony':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
+    '🍽️ Dining':          {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':6}},
+    '🌴 Outdoor Balcony':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
   },
   '3BR Skyline':{
-    '🛏️ Bedroom 1 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2}},
-    '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1}},
-    '🛌 Bedroom 3 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-LIT-002'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-002':1}},
+    '🛏️ Bedroom 1 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
+    '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
+    '🛌 Bedroom 3 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-001':1}},
     '🛋️ Lounge':          {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
-    '🍽️ Dining':          {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':12}},
-    '🌴 Outdoor Balcony':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':4,'FRN-TBL-006':2,'FRN-OUT-001':1,'FRN-OUT-002':1}},
+    '🍽️ Dining':          {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':6}},
+    '🌴 Outdoor Balcony':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
   },
   '3BR Penthouse':{
-    '🛏️ Master Bedroom':  {items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2}},
-    '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1}},
-    '🛌 Bedroom 3 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-LIT-002'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-002':1}},
+    '🛏️ Master Bedroom':  {items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
+    '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
+    '🛌 Bedroom 3 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-001':1}},
     '🛋️ Main Lounge':     {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
-    '🍽️ Formal Dining':   {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':12}},
-    '🌴 Outdoor Terrace':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':6,'FRN-TBL-006':2,'FRN-OUT-001':1,'FRN-OUT-002':1}},
+    '🍽️ Formal Dining':   {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':6}},
+    '🌴 Outdoor Terrace':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
   },
   '4BR Penthouse':{
-    '🛏️ Master Bedroom':  {items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2}},
-    '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-001'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1}},
-    '🛏️ Bedroom 3 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-LIT-002'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-002':1}},
-    '🛌 Bedroom 4 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-LIT-002'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-002':1}},
+    '🛏️ Master Bedroom':  {items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
+    '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
+    '🛏️ Bedroom 3 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
+    '🛌 Bedroom 4 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-001':1}},
     '🛋️ Main Lounge':     {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
-    '🍽️ Formal Dining':   {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':12}},
-    '🌴 Terrace 1':        {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':4,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
-    '🌴 Terrace 2':        {items:['FRN-SEA-002','FRN-TBL-006'], exp:{'FRN-SEA-002':4,'FRN-TBL-006':1}},
+    '🍽️ Formal Dining':   {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':6}},
+    '🌴 Terrace 1':        {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
+    '🌴 Terrace 2':        {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
   },
 };
 
@@ -1390,7 +1417,24 @@ function renderDetail(roomId){
         // Render non-sofa items in this area
         frnIds.filter(id=>id!=='FRN-SEA-SOFA').forEach(frnId=>{
           shownIds.add(frnId);
-          const expected=(ROOM_AREA_OVERRIDES[roomId]?.[frnId]??areaExp[frnId])||0;
+          const expectedRaw=(ROOM_AREA_OVERRIDES[roomId]?.[frnId]??areaExp[frnId]);
+          const expected=expectedRaw??0;
+          const isTracked=expectedRaw!==undefined;
+          if(!isTracked&&!expected){
+            const actual=inv[frnId]??0;
+            const catItem=CATALOGUE.find(c=>c.id===frnId)||{name:frnId,icon:'📦'};
+            h+=`<div class="item-row">
+              ${itemIconHtml(catItem)}
+              <div class="item-name">${catItem.name}</div>
+              <div class="item-expected">Exp: —</div>
+              <div class="item-controls">
+                ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',-1)">−</button>`:''}
+                <div class="qty-val">${actual}</div>
+                ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',1)">+</button>`:''}
+              </div>
+            </div>`;
+            return;
+          }
           if(!expected) return;
           const actual=inv[frnId]??0;
           const catItem=CATALOGUE.find(c=>c.id===frnId)||{name:frnId,icon:'📦'};
@@ -1409,7 +1453,24 @@ function renderDetail(roomId){
       } else {
         frnIds.forEach(frnId=>{
           shownIds.add(frnId);
-          const expected=(ROOM_AREA_OVERRIDES[roomId]?.[frnId]??areaExp[frnId])||0;
+          const expectedRaw=(ROOM_AREA_OVERRIDES[roomId]?.[frnId]??areaExp[frnId]);
+          const expected=expectedRaw??0;
+          const isTracked=expectedRaw!==undefined;
+          if(!isTracked&&!expected){
+            const actual=inv[frnId]??0;
+            const catItem=CATALOGUE.find(c=>c.id===frnId)||{name:frnId,icon:'📦'};
+            h+=`<div class="item-row">
+              ${itemIconHtml(catItem)}
+              <div class="item-name">${catItem.name}</div>
+              <div class="item-expected">Exp: —</div>
+              <div class="item-controls">
+                ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',-1)">−</button>`:''}
+                <div class="qty-val">${actual}</div>
+                ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',1)">+</button>`:''}
+              </div>
+            </div>`;
+            return;
+          }
           if(!expected) return;
           const actual=inv[frnId]??0;
           const catItem=CATALOGUE.find(c=>c.id===frnId)||{name:frnId,icon:'📦'};
@@ -1543,8 +1604,13 @@ function recalcRoomStatus(roomId){
   const inv=INVENTORY[roomId]||{};
   const sofaItems = CATALOGUE.filter(c=>SOFA_IDS.includes(c.id)||c.name.toLowerCase().includes('sofa')||c.name.toLowerCase().includes('sofe'));
   const hasSofa = sofaItems.some(s=>(inv[s.id]||0)>=1);
-  const hasMissing=Object.entries(std).some(([frnId,exp])=>{
+  // Lamp group check: any combination of LAMP_IDS summing to LAMP_TOTALS[type] = compliant
+  const lampRequired = LAMP_TOTALS[room?.type] ?? 0;
+  const lampActual = LAMP_IDS.reduce((sum,id)=>sum+(inv[id]||0), 0);
+  const lampMissing = lampRequired > 0 && lampActual < lampRequired;
+  const hasMissing=lampMissing||Object.entries(std).some(([frnId,exp])=>{
     if(frnId==='FRN-SEA-SOFA') return !hasSofa;
+    if(LAMP_IDS.includes(frnId)) return false; // handled by group check above
     return (inv[frnId]||0)<exp;
   });
   ROOM_STATUS[roomId]=hasMissing?'missing':'compliant';
@@ -1638,6 +1704,81 @@ function renderAI(){
     return acc;
   },{});
 
+  /* ── Lamp distribution analysis ── */
+  const LAMP_NAMES={'FRN-LIT-001':'Rect','FRN-LIT-002':'Cyl Sml','FRN-LIT-004':'Cyl Big'};
+
+  function lampCounts(roomId){
+    const inv=INVENTORY[roomId]||{};
+    return {'FRN-LIT-001':inv['FRN-LIT-001']||0,'FRN-LIT-002':inv['FRN-LIT-002']||0,'FRN-LIT-004':inv['FRN-LIT-004']||0};
+  }
+  function lampLabel(counts){
+    const parts=Object.entries(counts).filter(([,v])=>v>0).map(([k,v])=>`${v}× ${LAMP_NAMES[k]}`);
+    return parts.length?parts.join(' + '):'None counted';
+  }
+  function comboKey(counts){ return LAMP_IDS.map(id=>counts[id]).join(','); }
+  function swapText(actual,std){
+    const excess=LAMP_IDS.filter(id=>actual[id]>(std[id]||0)).map(id=>`${actual[id]-(std[id]||0)}× ${LAMP_NAMES[id]}`);
+    const lacking=LAMP_IDS.filter(id=>(std[id]||0)>actual[id]).map(id=>`${(std[id]||0)-actual[id]}× ${LAMP_NAMES[id]}`);
+    if(excess.length&&lacking.length) return `Remove ${excess.join(', ')} · Add ${lacking.join(', ')}`;
+    if(excess.length) return `Remove ${excess.join(', ')}`;
+    if(lacking.length) return `Add ${lacking.join(', ')}`;
+    return null;
+  }
+
+  // Group inspected rooms by type → combo distribution
+  const inspected=ROOMS.filter(r=>(ROOM_STATUS[r.id]||'uninspected')!=='uninspected');
+  const byType={};
+  inspected.forEach(r=>{
+    if(!byType[r.type]) byType[r.type]=[];
+    const counts=lampCounts(r.id);
+    byType[r.type].push({roomId:r.id,floor:r.floor,counts,key:comboKey(counts),label:lampLabel(counts)});
+  });
+
+  // For each type: find modal combo + build distribution rows
+  const distHTML=Object.entries(byType).map(([type,rooms])=>{
+    const freq={};
+    rooms.forEach(r=>{ if(!freq[r.key]) freq[r.key]={label:r.label,counts:r.counts,rooms:[]}; freq[r.key].rooms.push(r); });
+    const sorted=Object.values(freq).sort((a,b)=>b.rooms.length-a.rooms.length);
+    const modal=sorted[0];
+    const total=rooms.length;
+    const rows=sorted.map(f=>{
+      const pct=Math.round(f.rooms.length/total*100);
+      const isModal=f===modal;
+      return `<div class="lamp-dist-row">
+        <span class="lamp-combo-label">${f.label}${isModal?' <span class="lamp-combo-badge">standard</span>':''}</span>
+        <div class="lamp-combo-bar-wrap"><div class="lamp-combo-bar" style="width:${pct}%;opacity:${isModal?1:0.45}"></div></div>
+        <span class="lamp-combo-count">${f.rooms.length}/${total}</span>
+      </div>`;
+    }).join('');
+    return `<div class="lamp-section-type">${type}</div>${rows}`;
+  }).join('');
+
+  // Swap recommendations: rooms not matching their type's modal combo
+  const swapSections=Object.entries(byType).map(([type,rooms])=>{
+    const freq={};
+    rooms.forEach(r=>{ if(!freq[r.key]) freq[r.key]={label:r.label,counts:r.counts,rooms:[]}; freq[r.key].rooms.push(r); });
+    const modal=Object.values(freq).sort((a,b)=>b.rooms.length-a.rooms.length)[0];
+    if(!modal) return '';
+    const deviating=rooms.filter(r=>r.key!==modal.key);
+    if(!deviating.length) return '';
+    const rows=deviating.map(r=>{
+      const swap=swapText(r.counts,modal.counts);
+      return `<div class="lamp-swap-row">
+        <span class="lamp-swap-room">${r.roomId}</span>
+        <span class="lamp-swap-detail">Has: ${r.label}<br>${swap?`<span style="color:#c9a84c">${swap}</span>`:''}</span>
+      </div>`;
+    }).join('');
+    return `<div class="lamp-section-type">${type} <span style="font-weight:400;color:var(--muted);text-transform:none">→ standardise to: ${modal.label}</span></div>${rows}`;
+  }).join('');
+
+  const hasInspected=inspected.length>0;
+  const hasDeviations=Object.entries(byType).some(([,rooms])=>{
+    const freq={};
+    rooms.forEach(r=>{ if(!freq[r.key]) freq[r.key]={rooms:[]}; freq[r.key].rooms.push(r); });
+    const modal=Object.values(freq).sort((a,b)=>b.rooms.length-a.rooms.length)[0];
+    return rooms.some(r=>r.key!==modal?.key);
+  });
+
   document.getElementById('ai-content').innerHTML=`
     <div class="ai-insight-card">
       <div class="ai-insight-icon">📊</div>
@@ -1657,6 +1798,20 @@ function renderAI(){
       <div class="ai-insight-title">Room Type Breakdown</div>
       <div class="ai-insight-text">${Object.entries(typeStats).map(([type,d])=>`${type}: ${d.compliant}/${d.total} compliant`).join(' · ')}</div>
     </div>
+    <div class="ai-insight-card">
+      <div class="ai-insight-icon">🪔</div>
+      <div class="ai-insight-title">Lamp Combination Distribution</div>
+      ${hasInspected
+        ? `<div class="ai-insight-text" style="margin-bottom:8px">How lamp types are distributed across inspected rooms. The most frequent combo per room type is marked as <span class="lamp-combo-badge">standard</span>.</div>${distHTML}`
+        : `<div class="ai-insight-text">No rooms inspected yet. Lamp distribution will appear here as inspections are completed.</div>`}
+    </div>
+    ${hasInspected?`<div class="ai-insight-card">
+      <div class="ai-insight-icon">🔄</div>
+      <div class="ai-insight-title">Lamp Standardisation Recommendations</div>
+      ${hasDeviations
+        ? `<div class="ai-insight-text" style="margin-bottom:8px">The following rooms differ from the most common lamp setup for their room type. Swapping these lamps will create a consistent standard across all rooms.</div>${swapSections}`
+        : `<div class="lamp-no-deviation">✅ All inspected rooms already use the same lamp combination within their room type.</div>`}
+    </div>`:''}
     <div class="ai-insight-card">
       <div class="ai-insight-icon">💡</div>
       <div class="ai-insight-title">Recommendation</div>

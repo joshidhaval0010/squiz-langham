@@ -537,7 +537,7 @@ setTimeout(function(){
     </div>
     <label class="modal-label">Item Name</label>
     <input class="modal-input" id="ai-name" type="text" placeholder="e.g. Bedside Lamp">
-    <label class="modal-label">Category</label>
+    <label class="modal-label">Add to Section</label>
     <select class="modal-select" id="ai-cat">
       <option value="Bedroom">Bedroom</option>
       <option value="Lounge">Lounge</option>
@@ -803,6 +803,14 @@ const CATALOGUE_STATIC = [
   {id:'FRN-SLP-002',name:'Single / Twin Bed',category:'Bedroom',icon:'🛌',bg_color:'#1A2035',image_url:null,is_active:true,sort_order:1},
   {id:'FRN-TBL-001',name:'Bedside Table',category:'Bedroom',icon:'🟫',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:2},
   {id:'FRN-TBL-008',name:'Bedside Table (Small)',category:'Bedroom',icon:'🟫',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:3},
+  {id:'FRN-TBL-009',name:'Lounge Breakfast/Bar Table',category:'Lounge',icon:'🪵',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:36},
+  {id:'FRN-TBL-010',name:'Lounge Telephone Table',category:'Lounge',icon:'📞',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:37},
+  {id:'FRN-TBL-011',name:'Lounge Side Table',category:'Lounge',icon:'📦',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:30},
+  {id:'FRN-TBL-012',name:'Lounge Coffee Table (Small)',category:'Lounge',icon:'📦',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:31},
+  {id:'FRN-TBL-013',name:'Television Table',category:'Lounge',icon:'📦',bg_color:'#1A1A1A',image_url:null,is_active:true,sort_order:33},
+  {id:'FRN-TBL-014',name:'Study Table (Small)',category:'Lounge',icon:'📦',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:34},
+  {id:'FRN-TBL-015',name:'Lounge Side Table (Big)',category:'Lounge',icon:'📦',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:35},
+  {id:'FRN-STR-001',name:'Lounge Storage Unit',category:'Lounge',icon:'📦',bg_color:'#1A1A1A',image_url:null,is_active:true,sort_order:32},
   {id:'FRN-TBL-007',name:'Study Table',category:'Bedroom',icon:'📐',bg_color:'#1E1A10',image_url:null,is_active:true,sort_order:3},
   {id:'FRN-SEA-005',name:'Study Chair',category:'Bedroom',icon:'💺',bg_color:'#101A1E',image_url:null,is_active:true,sort_order:4},
   {id:'FRN-LIT-001',name:'Rectangular Lamp',category:'Bedroom',icon:'🪔',bg_color:'#1E1810',image_url:null,is_active:true,sort_order:5},
@@ -878,27 +886,27 @@ ROOMS.forEach(r=>{
 const AREAS = {
   '1BR Hinterland':{
     '🛏️ Bedroom':       {items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
-    '🛋️ Lounge':        {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
+    '🛋️ Lounge':        {items:['FRN-SEA-003','FRN-SEA-004','FRN-SEA-006','FRN-TBL-004','FRN-TBL-005','FRN-TBL-009','FRN-TBL-010','FRN-TBL-011','FRN-TBL-012','FRN-TBL-013','FRN-TBL-014','FRN-TBL-015','FRN-STR-001','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
     '🍽️ Dining':        {items:['FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-002':1,'FRN-SEA-001':4}},
     '🌴 Outdoor Balcony':{items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
   },
   '1BR Ocean':{
     '🛏️ Bedroom':       {items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
-    '🛋️ Lounge':        {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
+    '🛋️ Lounge':        {items:['FRN-SEA-003','FRN-SEA-004','FRN-SEA-006','FRN-TBL-004','FRN-TBL-005','FRN-TBL-009','FRN-TBL-010','FRN-TBL-011','FRN-TBL-012','FRN-TBL-013','FRN-TBL-014','FRN-TBL-015','FRN-STR-001','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
     '🍽️ Dining':        {items:['FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-002':1,'FRN-SEA-001':4}},
     '🌴 Outdoor Balcony':{items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
   },
   '2BR Ocean':{
     '🛏️ Bedroom 1 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
     '🛌 Bedroom 2 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-001':1}},
-    '🛋️ Lounge':          {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
+    '🛋️ Lounge':          {items:['FRN-SEA-003','FRN-SEA-004','FRN-SEA-006','FRN-TBL-004','FRN-TBL-005','FRN-TBL-009','FRN-TBL-010','FRN-TBL-011','FRN-TBL-012','FRN-TBL-013','FRN-TBL-014','FRN-TBL-015','FRN-STR-001','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
     '🍽️ Dining':          {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':6}},
     '🌴 Outdoor Balcony':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
   },
   '2BR Ocean Upper':{
     '🛏️ Bedroom 1 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
     '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
-    '🛋️ Lounge':          {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
+    '🛋️ Lounge':          {items:['FRN-SEA-003','FRN-SEA-004','FRN-SEA-006','FRN-TBL-004','FRN-TBL-005','FRN-TBL-009','FRN-TBL-010','FRN-TBL-011','FRN-TBL-012','FRN-TBL-013','FRN-TBL-014','FRN-TBL-015','FRN-STR-001','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
     '🍽️ Dining':          {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':6}},
     '🌴 Outdoor Balcony':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
   },
@@ -906,7 +914,7 @@ const AREAS = {
     '🛏️ Bedroom 1 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
     '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
     '🛌 Bedroom 3 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-001':1}},
-    '🛋️ Lounge':          {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
+    '🛋️ Lounge':          {items:['FRN-SEA-003','FRN-SEA-004','FRN-SEA-006','FRN-TBL-004','FRN-TBL-005','FRN-TBL-009','FRN-TBL-010','FRN-TBL-011','FRN-TBL-012','FRN-TBL-013','FRN-TBL-014','FRN-TBL-015','FRN-STR-001','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
     '🍽️ Dining':          {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':6}},
     '🌴 Outdoor Balcony':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
   },
@@ -914,7 +922,7 @@ const AREAS = {
     '🛏️ Master Bedroom':  {items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
     '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
     '🛌 Bedroom 3 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-001':1}},
-    '🛋️ Main Lounge':     {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
+    '🛋️ Main Lounge':     {items:['FRN-SEA-003','FRN-SEA-004','FRN-SEA-006','FRN-TBL-004','FRN-TBL-005','FRN-TBL-009','FRN-TBL-010','FRN-TBL-011','FRN-TBL-012','FRN-TBL-013','FRN-TBL-014','FRN-TBL-015','FRN-STR-001','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
     '🍽️ Formal Dining':   {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':6}},
     '🌴 Outdoor Terrace':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
   },
@@ -923,7 +931,7 @@ const AREAS = {
     '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
     '🛏️ Bedroom 3 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
     '🛌 Bedroom 4 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-001':1}},
-    '🛋️ Main Lounge':     {items:['FRN-SEA-SOFA','FRN-TBL-004','FRN-TBL-005','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-SEA-SOFA':1,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
+    '🛋️ Main Lounge':     {items:['FRN-SEA-003','FRN-SEA-004','FRN-SEA-006','FRN-TBL-004','FRN-TBL-005','FRN-TBL-009','FRN-TBL-010','FRN-TBL-011','FRN-TBL-012','FRN-TBL-013','FRN-TBL-014','FRN-TBL-015','FRN-STR-001','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
     '🍽️ Formal Dining':   {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':6}},
     '🌴 Terrace 1':        {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
     '🌴 Terrace 2':        {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
@@ -1381,6 +1389,14 @@ function renderSofaSelector(roomId, canEdit){
   return `<div class="sofa-selector">${html}</div>`;
 }
 
+function getAreaCategory(areaName){
+  const n=areaName.toLowerCase();
+  if(n.includes('lounge')) return 'Lounge';
+  if(n.includes('bedroom')||n.includes('master')) return 'Bedroom';
+  if(n.includes('outdoor')||n.includes('terrace')||n.includes('balcony')) return 'Outdoor Balcony';
+  if(n.includes('dining')) return 'Dining';
+  return null;
+}
 function renderDetail(roomId){
   const room=ROOMS.find(r=>r.id===roomId);
   if(!room) return;
@@ -1407,15 +1423,7 @@ function renderDetail(roomId){
       const frnIds = areaData.items || [];
       const areaExp = areaData.exp || {};
       h+=`<div class="area-section"><div class="area-title">${areaName}</div>`;
-      // Check if this area has sofa placeholder
-      if(frnIds.includes('FRN-SEA-SOFA')){
-        h+=renderSofaSelector(roomId,canEdit);
-        shownIds.add('FRN-SEA-SOFA');
-        SOFA_IDS.forEach(id=>shownIds.add(id));
-        // Also mark any sofa-named items as shown
-        CATALOGUE.filter(c=>c.name.toLowerCase().includes('sofa')||c.name.toLowerCase().includes('sofe')).forEach(c=>shownIds.add(c.id));
-        // Render non-sofa items in this area
-        frnIds.filter(id=>id!=='FRN-SEA-SOFA').forEach(frnId=>{
+      frnIds.forEach(frnId=>{
           shownIds.add(frnId);
           const expectedRaw=(ROOM_AREA_OVERRIDES[roomId]?.[frnId]??areaExp[frnId]);
           const expected=expectedRaw??0;
@@ -1450,42 +1458,24 @@ function renderDetail(roomId){
             </div>
           </div>`;
         });
-      } else {
-        frnIds.forEach(frnId=>{
-          shownIds.add(frnId);
-          const expectedRaw=(ROOM_AREA_OVERRIDES[roomId]?.[frnId]??areaExp[frnId]);
-          const expected=expectedRaw??0;
-          const isTracked=expectedRaw!==undefined;
-          if(!isTracked&&!expected){
-            const actual=inv[frnId]??0;
-            const catItem=CATALOGUE.find(c=>c.id===frnId)||{name:frnId,icon:'📦'};
+      // Inject catalogue items whose category matches this area's section
+      const _areaCategory=getAreaCategory(areaName);
+      if(_areaCategory){
+        CATALOGUE.filter(c=>c.is_active!==false&&c.category===_areaCategory&&!shownIds.has(c.id))
+          .forEach(catItem=>{
+            shownIds.add(catItem.id);
+            const actual=inv[catItem.id]??0;
             h+=`<div class="item-row">
               ${itemIconHtml(catItem)}
               <div class="item-name">${catItem.name}</div>
               <div class="item-expected">Exp: —</div>
               <div class="item-controls">
-                ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',-1)">−</button>`:''}
+                ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${catItem.id}',-1)">−</button>`:''}
                 <div class="qty-val">${actual}</div>
-                ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',1)">+</button>`:''}
+                ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${catItem.id}',1)">+</button>`:''}
               </div>
             </div>`;
-            return;
-          }
-          if(!expected) return;
-          const actual=inv[frnId]??0;
-          const catItem=CATALOGUE.find(c=>c.id===frnId)||{name:frnId,icon:'📦'};
-          const cls=actual===expected?'exact':actual<expected?'under':'over';
-          h+=`<div class="item-row">
-            ${itemIconHtml(catItem)}
-            <div class="item-name">${catItem.name}</div>
-            <div class="item-expected">Exp: ${expected}</div>
-            <div class="item-controls">
-              ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',-1)">−</button>`:''}
-              <div class="qty-val ${cls}">${actual}</div>
-              ${canEdit?`<button class="qty-btn" onclick="adjustItem(${roomId},'${frnId}',1)">+</button>`:''}
-            </div>
-          </div>`;
-        });
+          });
       }
       h+='</div>';
     });

@@ -929,7 +929,7 @@ const STANDARDS = {
   '1BR Ocean':     {'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2,'FRN-LIT-003':1,'FRN-TBL-002':1,'FRN-SEA-001':4,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
   '2BR Ocean':     {'FRN-SLP-001':1,'FRN-SLP-002':2,'FRN-TBL-001':3,'FRN-LIT-001':2,'FRN-LIT-002':1,'FRN-LIT-003':1,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
   '2BR Ocean Upper':{'FRN-SLP-001':2,'FRN-TBL-001':4,'FRN-LIT-001':2,'FRN-LIT-002':1,'FRN-LIT-003':1,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
-  '3BR Skyline':   {'FRN-SLP-001':2,'FRN-SLP-002':2,'FRN-TBL-001':5,'FRN-LIT-001':3,'FRN-LIT-002':2,'FRN-LIT-003':2,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':4,'FRN-TBL-006':2,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
+  '3BR Skyline':   {'FRN-SLP-001':1,'FRN-SLP-002':4,'FRN-TBL-001':4,'FRN-LIT-001':3,'FRN-LIT-002':1,'FRN-LIT-003':2,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':4,'FRN-TBL-006':2,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
   '3BR Penthouse': {'FRN-SLP-001':2,'FRN-SLP-002':2,'FRN-TBL-001':5,'FRN-LIT-001':4,'FRN-LIT-002':2,'FRN-LIT-003':3,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':2,'FRN-TBL-005':2,'FRN-SEA-002':6,'FRN-TBL-006':2,'FRN-OUT-001':2,'FRN-OUT-002':2,'FRN-TBL-007':2,'FRN-SEA-005':2,'FRN-SEA-SOFA':1},
   '4BR Penthouse': {'FRN-SLP-001':3,'FRN-SLP-002':2,'FRN-TBL-001':7,'FRN-LIT-001':4,'FRN-LIT-002':4,'FRN-LIT-003':4,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':2,'FRN-TBL-005':2,'FRN-SEA-002':8,'FRN-TBL-006':2,'FRN-OUT-001':2,'FRN-OUT-002':2,'FRN-TBL-007':2,'FRN-SEA-005':2,'FRN-SEA-SOFA':1},
 };
@@ -942,17 +942,70 @@ const LAMP_TOTALS = {
   '1BR Ocean':     2,  // 1K
   '2BR Ocean':     3,  // 1K + 1T
   '2BR Ocean Upper':4, // 2K
-  '3BR Skyline':   5,  // 2K + 1T
+  '3BR Skyline':   4,  // 1K + 2T
   '3BR Penthouse': 5,  // 2K + 1T
   '4BR Penthouse': 7,  // 3K + 1T
 };
 
-// Rooms ending in '01' on each floor have smaller dining setup (2 chairs only)
+// Per-room expected quantity overrides
 const ROOM_AREA_OVERRIDES = {};
+// Global: every room expects 2 Tall Standing Lamps (xx02 lowered to 1 below);
+// all xx01 rooms have 2 dining chairs
 ROOMS.forEach(r=>{
-  if(String(r.id).endsWith('01')){
-    ROOM_AREA_OVERRIDES[r.id] = {'FRN-SEA-001':2};
+  const ovr={'FRN-LIT-003':2};
+  if(String(r.id).endsWith('01')) ovr['FRN-SEA-001']=2;
+  ROOM_AREA_OVERRIDES[r.id]=ovr;
+});
+// Floors 22-35: unit-specific overrides
+ROOMS.filter(r=>r.floor>=22&&r.floor<=35).forEach(r=>{
+  const suffix=String(r.id).slice(-2);
+  const ovr=ROOM_AREA_OVERRIDES[r.id]||{};
+  if(suffix==='01'){
+    // 2 tall standing lamps, 0 outdoor furniture
+    Object.assign(ovr,{'FRN-LIT-003':2,'FRN-SEA-002':0,'FRN-TBL-006':0,'FRN-OUT-001':0,'FRN-OUT-002':0});
+  } else if(suffix==='02'){
+    // 1 tall lamp, no study table/chair, 1 outdoor chair only
+    Object.assign(ovr,{'FRN-LIT-003':1,'FRN-TBL-007':0,'FRN-SEA-005':0,'FRN-SEA-002':1,'FRN-TBL-006':0,'FRN-OUT-001':0,'FRN-OUT-002':0});
+  } else if(suffix==='03'){
+    // 2 tall lamps, 1 bar table, 2 chairs only — no dining table
+    Object.assign(ovr,{'FRN-LIT-003':2,'FRN-TBL-009':1,'FRN-SEA-001':2,'FRN-TBL-002':0,'FRN-TBL-003':0});
+  } else if(suffix==='04'){
+    // 2 tall lamps, no study table/chair
+    Object.assign(ovr,{'FRN-LIT-003':2,'FRN-TBL-007':0,'FRN-SEA-005':0});
+  } else if(suffix==='05'){
+    // rectangular dining table only, 6 chairs
+    Object.assign(ovr,{'FRN-TBL-002':0,'FRN-TBL-003':1,'FRN-SEA-001':6});
+  } else if(suffix==='07'){
+    // no study table/chair, 2 tall lamps
+    Object.assign(ovr,{'FRN-TBL-007':0,'FRN-SEA-005':0,'FRN-LIT-003':2});
   }
+  if(Object.keys(ovr).length>0) ROOM_AREA_OVERRIDES[r.id]=ovr;
+});
+// Floors 36-44: unit-specific overrides
+ROOMS.filter(r=>r.floor>=36&&r.floor<=44).forEach(r=>{
+  const suffix=String(r.id).slice(-2);
+  const ovr=ROOM_AREA_OVERRIDES[r.id]||{};
+  if(suffix==='01'){
+    // 2 tall standing lamps, 0 outdoor furniture
+    Object.assign(ovr,{'FRN-LIT-003':2,'FRN-SEA-002':0,'FRN-TBL-006':0,'FRN-OUT-001':0,'FRN-OUT-002':0});
+  } else if(suffix==='02'){
+    // 1 tall lamp, no study table/chair, 1 outdoor chair only
+    Object.assign(ovr,{'FRN-LIT-003':1,'FRN-TBL-007':0,'FRN-SEA-005':0,'FRN-SEA-002':1,'FRN-TBL-006':0,'FRN-OUT-001':0,'FRN-OUT-002':0});
+  }
+  if(Object.keys(ovr).length>0) ROOM_AREA_OVERRIDES[r.id]=ovr;
+});
+// Floors 45-48: 2BR Ocean Upper — rectangular dining table + 6 chairs for all units
+ROOMS.filter(r=>r.floor>=45&&r.floor<=48).forEach(r=>{
+  const suffix=String(r.id).slice(-2);
+  const ovr=ROOM_AREA_OVERRIDES[r.id]||{};
+  if(suffix==='01'){
+    // x01: override global 2-chair rule → 6 chairs; no circular table
+    Object.assign(ovr,{'FRN-SEA-001':6,'FRN-TBL-002':0});
+  } else if(suffix==='02'||suffix==='03'){
+    // x02/x03: no circular table
+    Object.assign(ovr,{'FRN-TBL-002':0});
+  }
+  if(Object.keys(ovr).length>0) ROOM_AREA_OVERRIDES[r.id]=ovr;
 });
 
 /* ═══════════════════════════════════════════════════════
@@ -982,12 +1035,12 @@ const AREAS = {
     '🛏️ Bedroom 1 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
     '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
     '🛋️ Lounge':          {items:['FRN-SEA-003','FRN-SEA-004','FRN-SEA-006','FRN-TBL-004','FRN-TBL-005','FRN-TBL-009','FRN-TBL-010','FRN-TBL-011','FRN-TBL-012','FRN-TBL-013','FRN-TBL-014','FRN-TBL-015','FRN-STR-001','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
-    '🍽️ Dining':          {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':6}},
+    '🍽️ Dining':          {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-SEA-001':6}},
     '🌴 Outdoor Balcony':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
   },
   '3BR Skyline':{
     '🛏️ Bedroom 1 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
-    '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
+    '🛌 Bedroom 2 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-001':1}},
     '🛌 Bedroom 3 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-001':1}},
     '🛋️ Lounge':          {items:['FRN-SEA-003','FRN-SEA-004','FRN-SEA-006','FRN-TBL-004','FRN-TBL-005','FRN-TBL-009','FRN-TBL-010','FRN-TBL-011','FRN-TBL-012','FRN-TBL-013','FRN-TBL-014','FRN-TBL-015','FRN-STR-001','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
     '🍽️ Dining':          {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':6}},
@@ -1070,13 +1123,15 @@ async function loadRoomStatuses(){
   } catch(e){ console.warn('Room status load failed',e.message); }
 }
 
-async function loadRoomInventory(roomId){
-  if(INVENTORY_LOADED.has(roomId)) return;
+async function loadRoomInventory(roomId, force=false){
+  // force=true re-reads from DB even if a (possibly partial) bulk load already
+  // marked this room loaded — guarantees the detail view shows the true counts.
+  if(!force && INVENTORY_LOADED.has(roomId)) return;
   try{
     const {data,error} = await sb.from('room_inventory')
       .select('item_id,actual_count').eq('room_id',roomId);
     if(error) throw error;
-    if(!INVENTORY[roomId]) INVENTORY[roomId]={};
+    INVENTORY[roomId]={};
     if(data) data.forEach(r=>{ INVENTORY[roomId][r.item_id]=r.actual_count; });
     INVENTORY_LOADED.add(roomId);
   } catch(e){
@@ -1431,7 +1486,7 @@ async function openRoom(roomId){
   detailView.style.display='flex';
   document.getElementById('detail-content').innerHTML='<div style="padding:20px;color:var(--muted);text-align:center">Loading…</div>';
   document.getElementById('topbar-title').textContent='Room '+roomId;
-  await loadRoomInventory(roomId);
+  await loadRoomInventory(roomId, true);
   renderDetail(roomId);
 }
 
@@ -1500,7 +1555,13 @@ function renderDetail(roomId){
       h+=`<div class="area-section"><div class="area-title">${areaName}</div>`;
       frnIds.forEach(frnId=>{
           shownIds.add(frnId);
-          const expectedRaw=(ROOM_AREA_OVERRIDES[roomId]?.[frnId]??areaExp[frnId]);
+          let expectedRaw=(ROOM_AREA_OVERRIDES[roomId]?.[frnId]??areaExp[frnId]);
+          // Bedroom lamps (Rectangular / Cylindrical / Round) are interchangeable:
+          // any combination meeting the room's lamp total counts. Don't pin a
+          // per-type requirement — the room's status badge reflects the group total.
+          if(LAMP_IDS.includes(frnId)){
+            expectedRaw=undefined;
+          }
           const expected=expectedRaw??0;
           const isTracked=expectedRaw!==undefined;
           if(!isTracked&&!expected){
@@ -1518,8 +1579,10 @@ function renderDetail(roomId){
             </div>`;
             return;
           }
-          if(!expected) return;
           const actual=inv[frnId]??0;
+          // Expected 0: hide only if nothing is actually there. If furniture IS present,
+          // keep it visible (flagged "over") so it can be noted / relocated, not vanish.
+          if(!expected && actual===0) return;
           const catItem=CATALOGUE.find(c=>c.id===frnId)||{name:frnId,icon:'📦'};
           const cls=actual===expected?'exact':actual<expected?'under':'over';
           h+=`<div class="item-row">
@@ -1594,6 +1657,9 @@ function renderDetail(roomId){
     h+=`<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">Sign in to edit inventory</div>`;
   }
 
+  // Bottom back button — convenience after scrolling a long room
+  h+=`<button class="detail-back" onclick="closeDetail()" style="width:100%;text-align:center;justify-content:center;margin:8px 0 24px">← Back</button>`;
+
   document.getElementById('detail-content').innerHTML=h;
 }
 
@@ -1667,15 +1733,24 @@ function recalcRoomStatus(roomId){
   const room=ROOMS.find(r=>r.id===roomId);
   const std=STANDARDS[room?.type]||{};
   const inv=INVENTORY[roomId]||{};
+  const ovr=ROOM_AREA_OVERRIDES[roomId]||{};
   const sofaItems = CATALOGUE.filter(c=>SOFA_IDS.includes(c.id)||c.name.toLowerCase().includes('sofa')||c.name.toLowerCase().includes('sofe'));
   const hasSofa = sofaItems.some(s=>(inv[s.id]||0)>=1);
   // Lamp group check: any combination of LAMP_IDS summing to LAMP_TOTALS[type] = compliant
-  const lampRequired = LAMP_TOTALS[room?.type] ?? 0;
+  const _lampBase = LAMP_TOTALS[room?.type] ?? 0;
+  const _hasBesideTable = ((inv['FRN-TBL-001']||0)+(inv['FRN-TBL-008']||0)) > 0;
+  // When bedside table present, cylindrical lamp (FRN-LIT-002) is optional.
+  // Minimum required = 1 lamp per bedroom (any LAMP_IDS type counts).
+  const _bedroomCount = Object.keys(AREAS[room?.type]||{}).filter(a=>/bedroom|master/i.test(a)).length;
+  const lampRequired = _hasBesideTable ? _bedroomCount : _lampBase;
   const lampActual = LAMP_IDS.reduce((sum,id)=>sum+(inv[id]||0), 0);
   const lampMissing = lampRequired > 0 && lampActual < lampRequired;
-  const hasMissing=lampMissing||Object.entries(std).some(([frnId,exp])=>{
+  // Merge STANDARDS with room-specific overrides (override wins; 0 = not required)
+  const effectiveStd={...std,...ovr};
+  const hasMissing=lampMissing||Object.entries(effectiveStd).some(([frnId,exp])=>{
     if(frnId==='FRN-SEA-SOFA') return !hasSofa;
     if(LAMP_IDS.includes(frnId)) return false; // handled by group check above
+    if(exp===0) return false; // explicitly not required for this room
     return (inv[frnId]||0)<exp;
   });
   ROOM_STATUS[roomId]=hasMissing?'missing':'compliant';
@@ -1732,8 +1807,8 @@ function renderCompliance(){
   document.getElementById('comp-body').innerHTML=ROOMS.map(r=>{
     const s=ROOM_STATUS[r.id]||'uninspected';
     const inv=INVENTORY[r.id]||{};
-    const std=STANDARDS[r.type]||{};
-    const issues=Object.entries(std).filter(([frnId,exp])=>(inv[frnId]||0)<exp).length;
+    const std={...(STANDARDS[r.type]||{}),...(ROOM_AREA_OVERRIDES[r.id]||{})};
+    const issues=Object.entries(std).filter(([frnId,exp])=>exp>0&&(inv[frnId]||0)<exp).length;
     const badge=s==='compliant'?'badge-green':s==='missing'?'badge-red':'badge-muted';
     return `<tr>
       <td>${r.id}</td><td>${r.type}</td><td>F${r.floor}</td>
@@ -1991,12 +2066,23 @@ let ALL_INV_LOADED=false;
 async function loadAllInventory(){
   if(ALL_INV_LOADED) return;
   try{
-    const {data,error}=await sb.from('room_inventory').select('room_id,item_id,actual_count');
-    if(error) throw error;
-    (data||[]).forEach(r=>{
-      if(!INVENTORY[r.room_id]) INVENTORY[r.room_id]={};
-      INVENTORY[r.room_id][r.item_id]=r.actual_count;
-    });
+    // Page through all rows — Supabase caps each response at 1000 rows by default,
+    // so a single select() would silently truncate larger datasets.
+    const PAGE=1000;
+    let from=0;
+    while(true){
+      const {data,error}=await sb.from('room_inventory')
+        .select('room_id,item_id,actual_count')
+        .range(from,from+PAGE-1);
+      if(error) throw error;
+      const rows=data||[];
+      rows.forEach(r=>{
+        if(!INVENTORY[r.room_id]) INVENTORY[r.room_id]={};
+        INVENTORY[r.room_id][r.item_id]=r.actual_count;
+      });
+      if(rows.length<PAGE) break;
+      from+=PAGE;
+    }
     ROOMS.forEach(r=>INVENTORY_LOADED.add(r.id));
     ALL_INV_LOADED=true;
   }catch(e){ console.warn('Bulk inventory load failed',e.message); }
@@ -2380,6 +2466,14 @@ async function initApp(){
   } catch(e){
     console.warn('DB init error',e.message);
   }
+  // Recompute compliance from freshly-loaded inventory using the CURRENT rules,
+  // so rooms whose status was saved under older rules (e.g. lamp type-specific)
+  // display correctly. Display-only: does not write back to the database.
+  try{
+    ROOMS.forEach(r=>{
+      if(ROOM_STATUS[r.id] && ROOM_STATUS[r.id]!=='uninspected') recalcRoomStatus(r.id);
+    });
+  } catch(e){ console.warn('Status recompute error',e.message); }
   try{
     await initAuth();
   } catch(e){

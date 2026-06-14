@@ -947,13 +947,39 @@ const LAMP_TOTALS = {
   '4BR Penthouse': 7,  // 3K + 1T
 };
 
+// ── OUTDOOR BALCONY ──────────────────────────────────────────────
+// Seating is satisfied by EITHER a daybed OR (a chair + a footstool).
+// A coffee table is always required. xx01 rooms on floors 22-44 have no balcony.
+const OUTDOOR_DAYBED = 'FRN-SEA-002';
+const OUTDOOR_CHAIR  = 'FRN-OUT-001';
+const OUTDOOR_FOOT   = 'FRN-OUT-002';
+const OUTDOOR_COFFEE = 'FRN-TBL-006';
+const OUTDOOR_SEAT_IDS = [OUTDOOR_DAYBED, OUTDOOR_CHAIR, OUTDOOR_FOOT];
+const OUTDOOR_ALL_IDS  = [OUTDOOR_DAYBED, OUTDOOR_CHAIR, OUTDOOR_FOOT, OUTDOOR_COFFEE];
+function roomNeedsBalcony(room){
+  if(!room) return false;
+  const suffix = String(room.id).slice(-2);
+  // xx01 on floors 22-44 = no outdoor balcony furniture
+  return !(suffix==='01' && room.floor>=22 && room.floor<=44);
+}
+// Returns {required, seatingOK, coffeeOK, ok}
+function balconyState(room, inv){
+  if(!roomNeedsBalcony(room)) return {required:false, ok:true};
+  const daybed=inv[OUTDOOR_DAYBED]||0, chair=inv[OUTDOOR_CHAIR]||0,
+        foot=inv[OUTDOOR_FOOT]||0, coffee=inv[OUTDOOR_COFFEE]||0;
+  const seatingOK = daybed>=1 || (chair>=1 && foot>=1);
+  const coffeeOK  = coffee>=1;
+  return {required:true, seatingOK, coffeeOK, ok:seatingOK&&coffeeOK};
+}
+
 // Per-room expected quantity overrides
 const ROOM_AREA_OVERRIDES = {};
 // Global: every room expects 2 Tall Standing Lamps (xx02 lowered to 1 below);
-// all xx01 rooms have 2 dining chairs
+// 1BR xx01 rooms have 2 dining chairs. 2BR+ rooms always keep their mandatory
+// rectangular table + 6 chairs, so the chair cap is restricted to 1BR only.
 ROOMS.forEach(r=>{
   const ovr={'FRN-LIT-003':2};
-  if(String(r.id).endsWith('01')) ovr['FRN-SEA-001']=2;
+  if(String(r.id).endsWith('01') && String(r.type).startsWith('1BR')) ovr['FRN-SEA-001']=2;
   ROOM_AREA_OVERRIDES[r.id]=ovr;
 });
 // Floors 22-35: unit-specific overrides
@@ -1562,6 +1588,24 @@ function renderDetail(roomId){
           if(LAMP_IDS.includes(frnId)){
             expectedRaw=undefined;
           }
+          // Outdoor balcony: seating (daybed / chair / footstool) is interchangeable —
+          // show "Exp: —" and let the room badge judge the group. Coffee table required.
+          // xx01 (floors 22-44) have no balcony → expected 0 (hidden unless present).
+          if(OUTDOOR_ALL_IDS.includes(frnId)){
+            if(!roomNeedsBalcony(room)) expectedRaw=0;
+            else if(frnId===OUTDOOR_COFFEE) expectedRaw=1;
+            else expectedRaw=undefined;
+          }
+          // Circular Dining Table is optional in 2BR and larger units (only some
+          // have one) — show "Exp: —" so it's never flagged as missing there.
+          if(frnId==='FRN-TBL-002' && room && !String(room.type).startsWith('1BR')){
+            expectedRaw=undefined;
+          }
+          // Bedside tables (large / small) are interchangeable — don't flag a
+          // specific size; the room badge reflects the combined total.
+          if(frnId==='FRN-TBL-001' || frnId==='FRN-TBL-008'){
+            expectedRaw=undefined;
+          }
           const expected=expectedRaw??0;
           const isTracked=expectedRaw!==undefined;
           if(!isTracked&&!expected){
@@ -1745,12 +1789,20 @@ function recalcRoomStatus(roomId){
   const lampRequired = _hasBesideTable ? _bedroomCount : _lampBase;
   const lampActual = LAMP_IDS.reduce((sum,id)=>sum+(inv[id]||0), 0);
   const lampMissing = lampRequired > 0 && lampActual < lampRequired;
+  // Outdoor balcony group: seating = daybed OR (chair + footstool), plus a coffee
+  // table. xx01 (floors 22-44) need no balcony. Individual outdoor items are not
+  // checked one-by-one — the group decides.
+  const balcony = balconyState(room, inv);
+  const balconyMissing = balcony.required && !balcony.ok;
   // Merge STANDARDS with room-specific overrides (override wins; 0 = not required)
   const effectiveStd={...std,...ovr};
-  const hasMissing=lampMissing||Object.entries(effectiveStd).some(([frnId,exp])=>{
+  const hasMissing=lampMissing||balconyMissing||Object.entries(effectiveStd).some(([frnId,exp])=>{
     if(frnId==='FRN-SEA-SOFA') return !hasSofa;
     if(LAMP_IDS.includes(frnId)) return false; // handled by group check above
+    if(OUTDOOR_ALL_IDS.includes(frnId)) return false; // handled by balcony group above
     if(exp===0) return false; // explicitly not required for this room
+    // Bedside tables: large + small are interchangeable, count them together.
+    if(frnId==='FRN-TBL-001') return ((inv['FRN-TBL-001']||0)+(inv['FRN-TBL-008']||0))<exp;
     return (inv[frnId]||0)<exp;
   });
   ROOM_STATUS[roomId]=hasMissing?'missing':'compliant';
@@ -2111,6 +2163,8 @@ function roomDeltas(roomId){
   const deltas={};
   Object.entries(std).forEach(([id,exp])=>{
     if(id==='FRN-SEA-SOFA'||LAMP_IDS.includes(id)) return;
+    if(OUTDOOR_SEAT_IDS.includes(id)) return; // interchangeable seating — not moved per-item
+    if(id==='FRN-TBL-001'){ deltas[id]=((inv['FRN-TBL-001']||0)+(inv['FRN-TBL-008']||0))-exp; return; }
     deltas[id]=(inv[id]||0)-exp;
   });
   const lampReq=LAMP_TOTALS[room?.type]??0;
@@ -2241,12 +2295,23 @@ function chatQuick(kind){
 }
 function buildAIContext(rb){
   const {compliant,missing,uninspected,rate}=calcStats();
+  // Compact per-room inventory so the AI can answer room-specific questions
+  // ("what's in room 2202?", "this room has 2 lamp types — move one out").
+  const rooms = ROOMS
+    .filter(r=>(ROOM_STATUS[r.id]||'uninspected')!=='uninspected')
+    .map(r=>{
+      const inv=INVENTORY[r.id]||{};
+      const items={};
+      Object.entries(inv).forEach(([id,c])=>{ if(c>0) items[getItemName(id)]=c; });
+      return {room:r.id, floor:r.floor, type:r.type, status:ROOM_STATUS[r.id]||'uninspected', items};
+    });
   return {
     property:'Jewel Residences, Gold Coast — 170 rooms, floors 22-49',
     stats:{compliant,missing,uninspected,total:rb.totalRooms,inspectedPct:rate},
     transfers:rb.transfers.slice(0,60).map(t=>`${t.qty}x ${t.name}: room ${t.from} (F${t.fromFloor}) -> room ${t.to} (F${t.toFloor})`),
     procurement:rb.procurement.map(p=>`${p.qty}x ${p.name}`),
     spare:rb.leftovers.map(l=>`${l.qty}x ${l.name}`),
+    rooms,
     roomTypes:Object.keys(STANDARDS)
   };
 }

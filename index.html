@@ -1592,7 +1592,10 @@ function renderDetail(roomId){
           // show "Exp: —" and let the room badge judge the group. Coffee table required.
           // xx01 (floors 22-44) have no balcony → expected 0 (hidden unless present).
           if(OUTDOOR_ALL_IDS.includes(frnId)){
-            if(!roomNeedsBalcony(room)) expectedRaw=0;
+            // No-balcony rooms (xx01, floors 22-44): not required, but still show the
+            // rows with +/- so staff can record outdoor furniture that's physically
+            // there (it'll read as surplus for the advisor to relocate).
+            if(!roomNeedsBalcony(room)) expectedRaw=undefined;
             else if(frnId===OUTDOOR_COFFEE) expectedRaw=1;
             else expectedRaw=undefined;
           }
@@ -1801,8 +1804,9 @@ function recalcRoomStatus(roomId){
     if(LAMP_IDS.includes(frnId)) return false; // handled by group check above
     if(OUTDOOR_ALL_IDS.includes(frnId)) return false; // handled by balcony group above
     if(exp===0) return false; // explicitly not required for this room
-    // Bedside tables: large + small are interchangeable, count them together.
-    if(frnId==='FRN-TBL-001') return ((inv['FRN-TBL-001']||0)+(inv['FRN-TBL-008']||0))<exp;
+    // Bedside positions: a large/small bedside table OR a Cylindrical Lamp (Sml)
+    // fills each side, so count them together against the required number.
+    if(frnId==='FRN-TBL-001') return ((inv['FRN-TBL-001']||0)+(inv['FRN-TBL-008']||0)+(inv['FRN-LIT-002']||0))<exp;
     return (inv[frnId]||0)<exp;
   });
   ROOM_STATUS[roomId]=hasMissing?'missing':'compliant';
@@ -2164,7 +2168,7 @@ function roomDeltas(roomId){
   Object.entries(std).forEach(([id,exp])=>{
     if(id==='FRN-SEA-SOFA'||LAMP_IDS.includes(id)) return;
     if(OUTDOOR_SEAT_IDS.includes(id)) return; // interchangeable seating — not moved per-item
-    if(id==='FRN-TBL-001'){ deltas[id]=((inv['FRN-TBL-001']||0)+(inv['FRN-TBL-008']||0))-exp; return; }
+    if(id==='FRN-TBL-001'){ deltas[id]=((inv['FRN-TBL-001']||0)+(inv['FRN-TBL-008']||0)+(inv['FRN-LIT-002']||0))-exp; return; }
     deltas[id]=(inv[id]||0)-exp;
   });
   const lampReq=LAMP_TOTALS[room?.type]??0;
@@ -2321,6 +2325,15 @@ async function sendChat(){
   if(!text) return;
   inp.value='';
   addUserMsg(text);
+  // PDF intent: the AI can't produce files, but the app can — offer the downloads.
+  if(/\b(pdf|report|download|print|export|document)\b/i.test(text)){
+    addBotHTML('I can generate these PDFs for you — tap one to download:'
+      +'<div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">'
+      +'<button class="chat-chip" style="text-align:left" onclick="exportRoomReportPDF()">📄 Room Report — every inspected room, its furniture & notes</button>'
+      +'<button class="chat-chip" style="text-align:left" onclick="exportPorterPDF()">🚚 Porter List — furniture transfers to balance rooms</button>'
+      +'</div>','Offered PDF downloads');
+    return;
+  }
   const rb=computeRebalance();
   updateChatSub();
   setTyping(true);
@@ -2388,21 +2401,46 @@ function pdfRowsForRoom(roomId){
   const std=expectedForRoom(roomId);
   const inv=INVENTORY[roomId]||{};
   const rows=[];
+  const shown=new Set();
+  const res=(exp,act)=> exp===''?'' : act===exp?'OK' : act<exp?`SHORT ${exp-act}` : `OVER ${act-exp}`;
   Object.entries(std).forEach(([id,exp])=>{
     if(id==='FRN-SEA-SOFA'||LAMP_IDS.includes(id)) return;
-    const act=inv[id]||0;
-    rows.push([getItemName(id),exp,act,act===exp?'OK':act<exp?`SHORT ${exp-act}`:`OVER ${act-exp}`]);
+    if(OUTDOOR_ALL_IDS.includes(id)) return;             // balcony handled as a group below
+    if(exp===0){ shown.add(id); return; }                // not required in this room
+    if(id==='FRN-TBL-002' && !String(room.type).startsWith('1BR')){ // circular optional in 2BR+
+      shown.add(id); const a=inv[id]||0; if(a>0) rows.push(['Circular Dining Table (optional)','-',a,'OK']); return;
+    }
+    if(id==='FRN-TBL-001'){                               // bedside: table(s) or cylindrical lamp
+      shown.add('FRN-TBL-001'); shown.add('FRN-TBL-008'); shown.add('FRN-LIT-002');
+      const a=(inv['FRN-TBL-001']||0)+(inv['FRN-TBL-008']||0)+(inv['FRN-LIT-002']||0);
+      rows.push(['Bedside (table or cyl. lamp)',exp,a,res(exp,a)]); return;
+    }
+    const act=inv[id]||0; shown.add(id);
+    rows.push([getItemName(id),exp,act,res(exp,act)]);
   });
+  // Lamp group (any combination)
   const lampReq=LAMP_TOTALS[room?.type]??0;
   if(lampReq>0){
     const lampAct=LAMP_IDS.reduce((s,id)=>s+(inv[id]||0),0);
-    rows.push(['Lamps (any combination)',lampReq,lampAct,lampAct===lampReq?'OK':lampAct<lampReq?`SHORT ${lampReq-lampAct}`:`OVER ${lampAct-lampReq}`]);
-    LAMP_IDS.filter(id=>(inv[id]||0)>0).forEach(id=>rows.push([`   · ${getItemName(id)}`,'',inv[id],'']));
+    rows.push(['Lamps (any combination)',lampReq,lampAct,res(lampReq,lampAct)]);
+    LAMP_IDS.forEach(id=>shown.add(id));
+    LAMP_IDS.filter(id=>(inv[id]||0)>0).forEach(id=>rows.push([`   - ${getItemName(id)}`,'',inv[id],'']));
   }
+  // Sofa (any type)
   const sofaAct=SOFA_IDS.reduce((s,id)=>s+(inv[id]||0),0);
+  SOFA_IDS.forEach(id=>shown.add(id));
   rows.push(['Sofa (any type)',1,sofaAct,sofaAct>=1?'OK':'SHORT 1']);
+  // Balcony (only where required): seating = daybed OR chair+footstool, plus coffee table
+  if(roomNeedsBalcony(room)){
+    const d=inv[OUTDOOR_DAYBED]||0,c=inv[OUTDOOR_CHAIR]||0,f=inv[OUTDOOR_FOOT]||0,t=inv[OUTDOOR_COFFEE]||0;
+    const seatOK=d>=1||(c>=1&&f>=1);
+    rows.push(['Balcony seating (daybed OR chair+stool)',1,seatOK?1:0,seatOK?'OK':'SHORT 1']);
+    rows.push(['Outdoor Coffee Table',1,t,res(1,t)]);
+    OUTDOOR_ALL_IDS.forEach(id=>shown.add(id));
+  }
+  // Anything else physically present (extras / surplus, incl. outdoor items in xx01)
   Object.entries(inv).forEach(([id,act])=>{
-    if(act>0&&!(id in std)&&!LAMP_IDS.includes(id)&&!SOFA_IDS.includes(id)){
+    if(act>0 && !shown.has(id)){
       rows.push([`${getItemName(id)} (extra)`,'-',act,'EXTRA']);
     }
   });
@@ -2434,21 +2472,30 @@ async function exportRoomReportPDF(){
       doc.text('Procurement required: '+rb.procurement.map(p=>`${p.qty}x ${p.name}`).join(', '),105,172,{align:'center',maxWidth:170});
     }
 
-    const sorted=[...ROOMS].sort((a,b)=>a.id-b.id);
+    // Inspected rooms only
+    const sorted=[...ROOMS].filter(r=>(ROOM_STATUS[r.id]||'uninspected')!=='uninspected').sort((a,b)=>a.id-b.id);
     let first=true;
     for(const room of sorted){
       const status=ROOM_STATUS[room.id]||'uninspected';
       const rows=pdfRowsForRoom(room.id);
       const note=(NOTES[room.id]||'').trim();
       let y=first?20:(doc.lastAutoTable?doc.lastAutoTable.finalY+14:20);
-      if(first||y>235){ doc.addPage(); y=20; }
+      if(first||y>225){ doc.addPage(); y=20; }
       first=false;
       doc.setFontSize(13);doc.setFont(undefined,'bold');doc.setTextColor(20,20,20);
       doc.text(`Room ${room.id}`,14,y);
       doc.setFontSize(10);doc.setFont(undefined,'normal');doc.setTextColor(100,100,100);
-      doc.text(`${room.type}  |  Floor ${room.floor}  |  Status: ${status.toUpperCase()}${note?'  |  Note: '+note.slice(0,60):''}`,14,y+6);
+      doc.text(`${room.type}  |  Floor ${room.floor}  |  Status: ${status.toUpperCase()}`,14,y+6);
+      let tableY=y+10;
+      if(note){
+        doc.setFontSize(9);doc.setFont(undefined,'italic');doc.setTextColor(120,90,30);
+        const noteLines=doc.splitTextToSize('Note: '+note,180);
+        doc.text(noteLines,14,y+11.5);
+        doc.setFont(undefined,'normal');
+        tableY=y+11.5+noteLines.length*4+1.5;
+      }
       doc.autoTable({
-        startY:y+10,
+        startY:tableY,
         head:[['Item','Expected','Actual','Result']],
         body:rows,
         theme:'grid',

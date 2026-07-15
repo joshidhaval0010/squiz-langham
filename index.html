@@ -2195,7 +2195,7 @@ function computeRebalance(){
       else if(d<0){ (deficit[id]=deficit[id]||[]).push({room:r.id,floor:r.floor,qty:-d}); }
     });
   });
-  const transfers=[],procurement={},leftovers={};
+  const transfers=[],procurement={},leftovers={},leftoverRooms={};
   const itemIds=new Set([...Object.keys(surplus),...Object.keys(deficit)]);
   itemIds.forEach(id=>{
     const sup=(surplus[id]||[]).map(s=>({...s}));
@@ -2215,13 +2215,13 @@ function computeRebalance(){
       if(d.qty>0) procurement[id]=(procurement[id]||0)+d.qty;
     });
     const left=sup.reduce((s,x)=>s+x.qty,0);
-    if(left>0) leftovers[id]=left;
+    if(left>0){ leftovers[id]=left; leftoverRooms[id]=sup.filter(s=>s.qty>0).sort((a,b)=>b.qty-a.qty); }
   });
   transfers.sort((a,b)=>a.fromFloor-b.fromFloor||a.from-b.from);
   return {
     transfers,
     procurement:Object.entries(procurement).map(([id,qty])=>({id,name:getItemName(id),qty})),
-    leftovers:Object.entries(leftovers).map(([id,qty])=>({id,name:getItemName(id),qty})),
+    leftovers:Object.entries(leftovers).map(([id,qty])=>({id,name:getItemName(id),qty,rooms:(leftoverRooms[id]||[]).map(s=>({room:s.room,floor:s.floor,qty:s.qty}))})),
     inspectedCount:inspected.length,
     totalRooms:ROOMS.length
   };
@@ -2300,7 +2300,7 @@ function chatQuick(kind){
   } else if(kind==='short'){
     addUserMsg("What's short building-wide?");
     if(!rb.procurement.length) addBotHTML('✅ Nothing needs procurement — every shortage can be covered by moving furniture between rooms.');
-    else addBotHTML(`After all possible internal transfers, you still need to procure:<div class="proc-note">${rb.procurement.map(p=>`🛒 ${p.qty}× ${escChat(p.name)}`).join('<br>')}</div>`+(rb.leftovers.length?`<br>Spare after balancing (send to storage): ${rb.leftovers.map(l=>`${l.qty}× ${escChat(l.name)}`).join(', ')}`:''));
+    else addBotHTML(`After all possible internal transfers, you still need to procure:<div class="proc-note">${rb.procurement.map(p=>`🛒 ${p.qty}× ${escChat(p.name)}`).join('<br>')}</div>`+(rb.leftovers.length?`<br>Spare after balancing (send to storage): ${rb.leftovers.map(l=>`${l.qty}× ${escChat(l.name)} (in ${l.rooms.slice(0,8).map(s=>s.room).join(', ')}${l.rooms.length>8?'…':''})`).join('<br>')}`:''));
   }
 }
 function buildAIContext(rb){
@@ -2320,7 +2320,7 @@ function buildAIContext(rb){
     stats:{compliant,missing,uninspected,total:rb.totalRooms,inspectedPct:rate},
     transfers:rb.transfers.slice(0,60).map(t=>`${t.qty}x ${t.name}: room ${t.from} (F${t.fromFloor}) -> room ${t.to} (F${t.toFloor})`),
     procurement:rb.procurement.map(p=>`${p.qty}x ${p.name}`),
-    spare:rb.leftovers.map(l=>`${l.qty}x ${l.name}`),
+    spare:rb.leftovers.map(l=>`${l.qty}x ${l.name} — surplus sitting in: ${l.rooms.map(s=>`room ${s.room} (F${s.floor}) x${s.qty}`).join(', ')}`),
     rooms,
     roomTypes:Object.keys(STANDARDS)
   };

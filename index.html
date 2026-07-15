@@ -993,8 +993,8 @@ ROOMS.filter(r=>r.floor>=22&&r.floor<=35).forEach(r=>{
     // 2 tall standing lamps, 0 outdoor furniture
     Object.assign(ovr,{'FRN-LIT-003':2,'FRN-SEA-002':0,'FRN-TBL-006':0,'FRN-OUT-001':0,'FRN-OUT-002':0});
   } else if(suffix==='02'){
-    // 1 tall lamp, no study table/chair, 1 outdoor chair only, 3 dining chairs
-    Object.assign(ovr,{'FRN-LIT-003':1,'FRN-TBL-007':0,'FRN-SEA-005':0,'FRN-SEA-002':1,'FRN-TBL-006':0,'FRN-OUT-001':0,'FRN-OUT-002':0,'FRN-SEA-001':3});
+    // 1 tall lamp, no study table/chair, 1 outdoor chair + 1 outdoor coffee table, 3 dining chairs
+    Object.assign(ovr,{'FRN-LIT-003':1,'FRN-TBL-007':0,'FRN-SEA-005':0,'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':0,'FRN-OUT-002':0,'FRN-SEA-001':3});
   } else if(suffix==='03'){
     // 2 tall lamps, 1 bar table, 2 chairs only — no dining table
     Object.assign(ovr,{'FRN-LIT-003':2,'FRN-TBL-009':1,'FRN-SEA-001':2,'FRN-TBL-002':0,'FRN-TBL-003':0});
@@ -1018,8 +1018,8 @@ ROOMS.filter(r=>r.floor>=36&&r.floor<=44).forEach(r=>{
     // 2 tall standing lamps, 0 outdoor furniture
     Object.assign(ovr,{'FRN-LIT-003':2,'FRN-SEA-002':0,'FRN-TBL-006':0,'FRN-OUT-001':0,'FRN-OUT-002':0});
   } else if(suffix==='02'){
-    // 1 tall lamp, no study table/chair, 1 outdoor chair only, 3 dining chairs
-    Object.assign(ovr,{'FRN-LIT-003':1,'FRN-TBL-007':0,'FRN-SEA-005':0,'FRN-SEA-002':1,'FRN-TBL-006':0,'FRN-OUT-001':0,'FRN-OUT-002':0,'FRN-SEA-001':3});
+    // 1 tall lamp, no study table/chair, 1 outdoor chair + 1 outdoor coffee table, 3 dining chairs
+    Object.assign(ovr,{'FRN-LIT-003':1,'FRN-TBL-007':0,'FRN-SEA-005':0,'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':0,'FRN-OUT-002':0,'FRN-SEA-001':3});
   } else if(suffix==='06'){
     // 1BR: 3 dining chairs
     Object.assign(ovr,{'FRN-SEA-001':3});

@@ -927,8 +927,8 @@ ROOMS.push({id:4902,floor:49,type:'4BR Penthouse',view:'🌊🌿 Ocean & Hinterl
 const STANDARDS = {
   '1BR Hinterland':{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2,'FRN-LIT-003':1,'FRN-TBL-002':1,'FRN-SEA-001':4,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
   '1BR Ocean':     {'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':2,'FRN-LIT-003':1,'FRN-TBL-002':1,'FRN-SEA-001':4,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
-  '2BR Ocean':     {'FRN-SLP-001':1,'FRN-SLP-002':2,'FRN-TBL-001':3,'FRN-LIT-001':2,'FRN-LIT-002':1,'FRN-LIT-003':1,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
-  '2BR Ocean Upper':{'FRN-SLP-001':2,'FRN-TBL-001':4,'FRN-LIT-001':2,'FRN-LIT-002':1,'FRN-LIT-003':1,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
+  '2BR Ocean':     {'FRN-SLP-001':1,'FRN-SLP-002':2,'FRN-TBL-001':3,'FRN-LIT-001':2,'FRN-LIT-002':1,'FRN-LIT-003':1,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':2,'FRN-TBL-006':2,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
+  '2BR Ocean Upper':{'FRN-SLP-001':2,'FRN-TBL-001':4,'FRN-LIT-001':2,'FRN-LIT-002':1,'FRN-LIT-003':1,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':1,'FRN-TBL-006':2,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
   '3BR Skyline':   {'FRN-SLP-001':1,'FRN-SLP-002':4,'FRN-TBL-001':4,'FRN-LIT-001':3,'FRN-LIT-002':1,'FRN-LIT-003':2,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-SEA-002':4,'FRN-TBL-006':2,'FRN-OUT-001':1,'FRN-OUT-002':1,'FRN-TBL-007':1,'FRN-SEA-005':1,'FRN-SEA-SOFA':1},
   '3BR Penthouse': {'FRN-SLP-001':2,'FRN-SLP-002':2,'FRN-TBL-001':5,'FRN-LIT-001':4,'FRN-LIT-002':2,'FRN-LIT-003':3,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':2,'FRN-TBL-005':2,'FRN-SEA-002':6,'FRN-TBL-006':2,'FRN-OUT-001':2,'FRN-OUT-002':2,'FRN-TBL-007':2,'FRN-SEA-005':2,'FRN-SEA-SOFA':1},
   '4BR Penthouse': {'FRN-SLP-001':3,'FRN-SLP-002':2,'FRN-TBL-001':7,'FRN-LIT-001':4,'FRN-LIT-002':4,'FRN-LIT-003':4,'FRN-TBL-003':1,'FRN-SEA-001':6,'FRN-TBL-004':2,'FRN-TBL-005':2,'FRN-SEA-002':8,'FRN-TBL-006':2,'FRN-OUT-001':2,'FRN-OUT-002':2,'FRN-TBL-007':2,'FRN-SEA-005':2,'FRN-SEA-SOFA':1},
@@ -949,7 +949,8 @@ const LAMP_TOTALS = {
 
 // ── OUTDOOR BALCONY ──────────────────────────────────────────────
 // Seating is satisfied by EITHER a daybed OR (a chair + a footstool).
-// A coffee table is always required. xx01 rooms on floors 22-44 have no balcony.
+// Coffee tables required = per-room override ?? room-type standard ?? 1
+// (2BR types expect 2). xx01 rooms on floors 22-44 have no balcony.
 const OUTDOOR_DAYBED = 'FRN-SEA-002';
 const OUTDOOR_CHAIR  = 'FRN-OUT-001';
 const OUTDOOR_FOOT   = 'FRN-OUT-002';
@@ -967,9 +968,11 @@ function balconyState(room, inv){
   if(!roomNeedsBalcony(room)) return {required:false, ok:true};
   const daybed=inv[OUTDOOR_DAYBED]||0, chair=inv[OUTDOOR_CHAIR]||0,
         foot=inv[OUTDOOR_FOOT]||0, coffee=inv[OUTDOOR_COFFEE]||0;
+  const coffeeReq = ROOM_AREA_OVERRIDES[room.id]?.[OUTDOOR_COFFEE]
+                  ?? (STANDARDS[room.type]||{})[OUTDOOR_COFFEE] ?? 1;
   const seatingOK = daybed>=1 || (chair>=1 && foot>=1);
-  const coffeeOK  = coffee>=1;
-  return {required:true, seatingOK, coffeeOK, ok:seatingOK&&coffeeOK};
+  const coffeeOK  = coffee>=coffeeReq;
+  return {required:true, seatingOK, coffeeOK, coffeeReq, ok:seatingOK&&coffeeOK};
 }
 
 // Per-room expected quantity overrides
@@ -990,20 +993,20 @@ ROOMS.filter(r=>r.floor>=22&&r.floor<=35).forEach(r=>{
     // 2 tall standing lamps, 0 outdoor furniture
     Object.assign(ovr,{'FRN-LIT-003':2,'FRN-SEA-002':0,'FRN-TBL-006':0,'FRN-OUT-001':0,'FRN-OUT-002':0});
   } else if(suffix==='02'){
-    // 1 tall lamp, no study table/chair, 1 outdoor chair only
-    Object.assign(ovr,{'FRN-LIT-003':1,'FRN-TBL-007':0,'FRN-SEA-005':0,'FRN-SEA-002':1,'FRN-TBL-006':0,'FRN-OUT-001':0,'FRN-OUT-002':0});
+    // 1 tall lamp, no study table/chair, 1 outdoor chair only, 3 dining chairs
+    Object.assign(ovr,{'FRN-LIT-003':1,'FRN-TBL-007':0,'FRN-SEA-005':0,'FRN-SEA-002':1,'FRN-TBL-006':0,'FRN-OUT-001':0,'FRN-OUT-002':0,'FRN-SEA-001':3});
   } else if(suffix==='03'){
     // 2 tall lamps, 1 bar table, 2 chairs only — no dining table
     Object.assign(ovr,{'FRN-LIT-003':2,'FRN-TBL-009':1,'FRN-SEA-001':2,'FRN-TBL-002':0,'FRN-TBL-003':0});
   } else if(suffix==='04'){
-    // 2 tall lamps, no study table/chair
-    Object.assign(ovr,{'FRN-LIT-003':2,'FRN-TBL-007':0,'FRN-SEA-005':0});
+    // 2 tall lamps, no study table/chair, 3 dining chairs
+    Object.assign(ovr,{'FRN-LIT-003':2,'FRN-TBL-007':0,'FRN-SEA-005':0,'FRN-SEA-001':3});
   } else if(suffix==='05'){
     // rectangular dining table only, 6 chairs
     Object.assign(ovr,{'FRN-TBL-002':0,'FRN-TBL-003':1,'FRN-SEA-001':6});
   } else if(suffix==='07'){
-    // no study table/chair, 2 tall lamps
-    Object.assign(ovr,{'FRN-TBL-007':0,'FRN-SEA-005':0,'FRN-LIT-003':2});
+    // no study table/chair, 2 tall lamps, 3 dining chairs
+    Object.assign(ovr,{'FRN-TBL-007':0,'FRN-SEA-005':0,'FRN-LIT-003':2,'FRN-SEA-001':3});
   }
   if(Object.keys(ovr).length>0) ROOM_AREA_OVERRIDES[r.id]=ovr;
 });
@@ -1015,8 +1018,11 @@ ROOMS.filter(r=>r.floor>=36&&r.floor<=44).forEach(r=>{
     // 2 tall standing lamps, 0 outdoor furniture
     Object.assign(ovr,{'FRN-LIT-003':2,'FRN-SEA-002':0,'FRN-TBL-006':0,'FRN-OUT-001':0,'FRN-OUT-002':0});
   } else if(suffix==='02'){
-    // 1 tall lamp, no study table/chair, 1 outdoor chair only
-    Object.assign(ovr,{'FRN-LIT-003':1,'FRN-TBL-007':0,'FRN-SEA-005':0,'FRN-SEA-002':1,'FRN-TBL-006':0,'FRN-OUT-001':0,'FRN-OUT-002':0});
+    // 1 tall lamp, no study table/chair, 1 outdoor chair only, 3 dining chairs
+    Object.assign(ovr,{'FRN-LIT-003':1,'FRN-TBL-007':0,'FRN-SEA-005':0,'FRN-SEA-002':1,'FRN-TBL-006':0,'FRN-OUT-001':0,'FRN-OUT-002':0,'FRN-SEA-001':3});
+  } else if(suffix==='06'){
+    // 1BR: 3 dining chairs
+    Object.assign(ovr,{'FRN-SEA-001':3});
   }
   if(Object.keys(ovr).length>0) ROOM_AREA_OVERRIDES[r.id]=ovr;
 });
@@ -1055,14 +1061,14 @@ const AREAS = {
     '🛌 Bedroom 2 (Twin)':{items:['FRN-SLP-002','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-002':2,'FRN-TBL-001':1,'FRN-LIT-001':1}},
     '🛋️ Lounge':          {items:['FRN-SEA-003','FRN-SEA-004','FRN-SEA-006','FRN-TBL-004','FRN-TBL-005','FRN-TBL-009','FRN-TBL-010','FRN-TBL-011','FRN-TBL-012','FRN-TBL-013','FRN-TBL-014','FRN-TBL-015','FRN-STR-001','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
     '🍽️ Dining':          {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-TBL-002':1,'FRN-SEA-001':6}},
-    '🌴 Outdoor Balcony':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
+    '🌴 Outdoor Balcony':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':2,'FRN-OUT-001':1,'FRN-OUT-002':1}},
   },
   '2BR Ocean Upper':{
     '🛏️ Bedroom 1 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
     '🛏️ Bedroom 2 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
     '🛋️ Lounge':          {items:['FRN-SEA-003','FRN-SEA-004','FRN-SEA-006','FRN-TBL-004','FRN-TBL-005','FRN-TBL-009','FRN-TBL-010','FRN-TBL-011','FRN-TBL-012','FRN-TBL-013','FRN-TBL-014','FRN-TBL-015','FRN-STR-001','FRN-LIT-003','FRN-TBL-007','FRN-SEA-005'], exp:{'FRN-TBL-004':1,'FRN-TBL-005':1,'FRN-LIT-003':1,'FRN-TBL-007':1,'FRN-SEA-005':1}},
     '🍽️ Dining':          {items:['FRN-TBL-003','FRN-TBL-002','FRN-SEA-001'], exp:{'FRN-TBL-003':1,'FRN-SEA-001':6}},
-    '🌴 Outdoor Balcony':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':1,'FRN-OUT-001':1,'FRN-OUT-002':1}},
+    '🌴 Outdoor Balcony':  {items:['FRN-SEA-002','FRN-TBL-006','FRN-OUT-001','FRN-OUT-002'], exp:{'FRN-SEA-002':1,'FRN-TBL-006':2,'FRN-OUT-001':1,'FRN-OUT-002':1}},
   },
   '3BR Skyline':{
     '🛏️ Bedroom 1 (King)':{items:['FRN-SLP-001','FRN-TBL-001','FRN-TBL-008','FRN-LIT-001','FRN-LIT-002','FRN-LIT-004'], exp:{'FRN-SLP-001':1,'FRN-TBL-001':2,'FRN-LIT-001':1,'FRN-LIT-002':1}},
